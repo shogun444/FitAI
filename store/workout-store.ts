@@ -4,6 +4,24 @@ import * as Crypto from "expo-crypto";
 import { create } from "zustand";
 
 const DEFAULT_REST_DURATION = 90; // seconds
+const DEFAULT_WORKING_SETS = 5;
+
+// Helper to create a default empty set
+function createDefaultSet(): WorkoutSet {
+  return {
+    id: Crypto.randomUUID(),
+    reps: null,
+    weight: null,
+    completed: false,
+    isDefault: true,
+    createdAt: Date.now(),
+  };
+}
+
+// Helper to check if a set was touched (edited or completed)
+function isSetTouched(set: WorkoutSet): boolean {
+  return set.completed || set.reps !== null || set.weight !== null;
+}
 
 interface WorkoutStore {
   // Current workout session
@@ -24,7 +42,13 @@ interface WorkoutStore {
   removeExercise: (exerciseId: string) => void;
 
   // Set actions
-  addSet: (exerciseId: string, reps: number, weight: number) => void;
+  addSet: (exerciseId: string) => void;
+  updateSet: (
+    exerciseId: string,
+    setId: string,
+    reps: number | null,
+    weight: number | null,
+  ) => void;
   toggleSetCompleted: (exerciseId: string, setId: string) => void;
   removeSet: (exerciseId: string, setId: string) => void;
 
@@ -72,8 +96,17 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
       clearInterval(timerInterval);
     }
 
+    // Filter out untouched default sets before saving
+    const cleanedExercises = currentWorkout.exercises
+      .map((exercise) => ({
+        ...exercise,
+        sets: exercise.sets.filter(isSetTouched),
+      }))
+      .filter((exercise) => exercise.sets.length > 0); // Remove exercises with no touched sets
+
     const completedWorkout: WorkoutSession = {
       ...currentWorkout,
+      exercises: cleanedExercises,
       endedAt: Date.now(),
       duration: Math.floor((Date.now() - currentWorkout.startedAt) / 1000),
     };
@@ -112,10 +145,16 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
     const { currentWorkout } = get();
     if (!currentWorkout) return;
 
+    // Create 5 default working sets
+    const defaultSets: WorkoutSet[] = Array.from(
+      { length: DEFAULT_WORKING_SETS },
+      () => createDefaultSet(),
+    );
+
     const newExercise: Exercise = {
       id: Crypto.randomUUID(),
       name,
-      sets: [],
+      sets: defaultSets,
       createdAt: Date.now(),
     };
 
@@ -139,15 +178,17 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
     });
   },
 
-  addSet: (exerciseId: string, reps: number, weight: number) => {
+  addSet: (exerciseId: string) => {
     const { currentWorkout } = get();
     if (!currentWorkout) return;
 
+    // Add a new non-default set (for "+ Add working set" action)
     const newSet: WorkoutSet = {
       id: Crypto.randomUUID(),
-      reps,
-      weight,
+      reps: null,
+      weight: null,
       completed: false,
+      isDefault: false,
       createdAt: Date.now(),
     };
 
@@ -157,6 +198,32 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
         exercises: currentWorkout.exercises.map((exercise) =>
           exercise.id === exerciseId
             ? { ...exercise, sets: [...exercise.sets, newSet] }
+            : exercise,
+        ),
+      },
+    });
+  },
+
+  updateSet: (
+    exerciseId: string,
+    setId: string,
+    reps: number | null,
+    weight: number | null,
+  ) => {
+    const { currentWorkout } = get();
+    if (!currentWorkout) return;
+
+    set({
+      currentWorkout: {
+        ...currentWorkout,
+        exercises: currentWorkout.exercises.map((exercise) =>
+          exercise.id === exerciseId
+            ? {
+                ...exercise,
+                sets: exercise.sets.map((s) =>
+                  s.id === setId ? { ...s, reps, weight } : s,
+                ),
+              }
             : exercise,
         ),
       },

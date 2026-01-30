@@ -6,11 +6,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function WorkoutTabScreen() {
   const router = useRouter();
-  const { currentWorkout, startWorkout } = useWorkoutStore();
+  const { currentWorkout } = useWorkoutStore();
 
   const handleStartWorkout = () => {
-    startWorkout();
-    router.push("/workout/session" as Href);
+    router.push("/workout/select-exercises" as Href);
   };
 
   const handleContinueWorkout = () => {

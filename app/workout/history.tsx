@@ -62,7 +62,7 @@ function WorkoutCard({ workout }: { workout: WorkoutSession }) {
 
       {workout.exercises.length > 0 && (
         <View className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-          {workout.exercises.slice(0, 3).map((ex) => (
+          {workout.exercises.map((ex) => (
             <View key={ex.id} className="mb-2">
               <Text className="font-secondary text-gray-600 dark:text-gray-400 mb-1">
                 • {ex.name} ({ex.sets.length} sets)
@@ -72,16 +72,11 @@ function WorkoutCard({ workout }: { workout: WorkoutSession }) {
                   key={set.id}
                   className="font-secondary text-xs text-gray-500 dark:text-gray-500 ml-4"
                 >
-                  Set {idx + 1}: {set.reps} reps × {set.weight} kg
+                  Set {idx + 1}: {set.reps ?? 0} reps × {set.weight ?? 0} kg
                 </Text>
               ))}
             </View>
           ))}
-          {workout.exercises.length > 3 && (
-            <Text className="font-secondary text-gray-500 mt-1">
-              +{workout.exercises.length - 3} more
-            </Text>
-          )}
         </View>
       )}
     </Card>

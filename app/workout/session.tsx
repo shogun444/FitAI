@@ -2,10 +2,12 @@ import { Button, Card, Heading, Subheading } from "@/components";
 import { getExercises } from "@/lib/storage";
 import { useWorkoutStore } from "@/store";
 import { ExerciseTemplate } from "@/types";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   FlatList,
   Modal,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   Pressable,
   ScrollView,
   Text,
@@ -20,30 +22,234 @@ function formatTime(seconds: number): string {
   return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 
-// Rest duration options from 30 seconds to 10 minutes
-const REST_DURATION_OPTIONS = [
-  { label: "30s", value: 30 },
-  { label: "45s", value: 45 },
-  { label: "1:00", value: 60 },
-  { label: "1:30", value: 90 },
-  { label: "2:00", value: 120 },
-  { label: "2:30", value: 150 },
-  { label: "3:00", value: 180 },
-  { label: "4:00", value: 240 },
-  { label: "5:00", value: 300 },
-  { label: "7:00", value: 420 },
-  { label: "10:00", value: 600 },
-];
+// ============================================
+// Section 1: RestTimePicker Component
+// ============================================
+
+const ITEM_HEIGHT = 50;
+const VISIBLE_ITEMS = 3;
+const MIN_REST_SECONDS = 30;
+const MAX_REST_SECONDS = 600;
+
+interface TimeWheelProps {
+  values: number[];
+  selectedValue: number;
+  onValueChange: (value: number) => void;
+}
+
+// ============================================
+// Section 2: Time Wheel Implementation
+// ============================================
+
+function TimeWheel({ values, selectedValue, onValueChange }: TimeWheelProps) {
+  const scrollViewRef = useRef<ScrollView>(null);
+  const isUserScrolling = useRef(false);
+
+  const initialIndex = values.indexOf(selectedValue);
+
+  useEffect(() => {
+    // Scroll to selected value when it changes externally (not from user scroll)
+    if (!isUserScrolling.current && scrollViewRef.current) {
+      const index = values.indexOf(selectedValue);
+      if (index >= 0) {
+        scrollViewRef.current.scrollTo({
+          y: index * ITEM_HEIGHT,
+          animated: false,
+        });
+      }
+    }
+  }, [selectedValue, values]);
+
+  const snapToNearestItem = useCallback(
+    (offsetY: number) => {
+      const index = Math.round(offsetY / ITEM_HEIGHT);
+      const clampedIndex = Math.max(0, Math.min(index, values.length - 1));
+
+      // Snap the scroll position
+      if (scrollViewRef.current) {
+        scrollViewRef.current.scrollTo({
+          y: clampedIndex * ITEM_HEIGHT,
+          animated: true,
+        });
+      }
+
+      // Update the value
+      const newValue = values[clampedIndex];
+      if (newValue !== selectedValue) {
+        onValueChange(newValue);
+      }
+
+      isUserScrolling.current = false;
+    },
+    [values, onValueChange, selectedValue],
+  );
+
+  const handleScrollEnd = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const offsetY = event.nativeEvent.contentOffset.y;
+      snapToNearestItem(offsetY);
+    },
+    [snapToNearestItem],
+  );
+
+  const handleScrollBegin = useCallback(() => {
+    isUserScrolling.current = true;
+  }, []);
+
+  return (
+    <View
+      className="overflow-hidden"
+      style={{ height: ITEM_HEIGHT * VISIBLE_ITEMS }}
+    >
+      {/* Selection indicator */}
+      <View
+        className="absolute left-0 right-0 border-t-2 border-b-2 border-primary z-10"
+        style={{ top: ITEM_HEIGHT, height: ITEM_HEIGHT }}
+        pointerEvents="none"
+      />
+      <ScrollView
+        ref={scrollViewRef}
+        showsVerticalScrollIndicator={false}
+        snapToInterval={ITEM_HEIGHT}
+        decelerationRate="fast"
+        nestedScrollEnabled={true}
+        onScrollBeginDrag={handleScrollBegin}
+        onScrollEndDrag={handleScrollEnd}
+        onMomentumScrollEnd={handleScrollEnd}
+        contentContainerStyle={{
+          paddingTop: ITEM_HEIGHT,
+          paddingBottom: ITEM_HEIGHT,
+        }}
+        contentOffset={{
+          x: 0,
+          y: initialIndex >= 0 ? initialIndex * ITEM_HEIGHT : 0,
+        }}
+      >
+        {values.map((item) => {
+          const isSelected = item === selectedValue;
+          return (
+            <View
+              key={item}
+              className="items-center justify-center"
+              style={{ height: ITEM_HEIGHT }}
+            >
+              <Text
+                className={`font-primaryBold text-3xl ${
+                  isSelected
+                    ? "text-primary"
+                    : "text-gray-300 dark:text-gray-600"
+                }`}
+              >
+                {item.toString().padStart(2, "0")}
+              </Text>
+            </View>
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
+}
+
+// ============================================
+// Section 3: Validation Logic
+// ============================================
+
+function validateRestTime(minutes: number, seconds: number): number {
+  let totalSeconds = minutes * 60 + seconds;
+
+  // Enforce minimum
+  if (totalSeconds < MIN_REST_SECONDS) {
+    totalSeconds = MIN_REST_SECONDS;
+  }
+
+  // Enforce maximum
+  if (totalSeconds > MAX_REST_SECONDS) {
+    totalSeconds = MAX_REST_SECONDS;
+  }
+
+  return totalSeconds;
+}
+
+// ============================================
+// Section 4: RestTimePicker with Large Display
+// ============================================
+
+interface RestTimePickerProps {
+  duration: number;
+  onDurationChange: (seconds: number) => void;
+}
+
+const MINUTES_VALUES = Array.from({ length: 11 }, (_, i) => i); // 0-10
+const SECONDS_VALUES = Array.from({ length: 12 }, (_, i) => i * 5); // 0, 5, 10, ... 55
+
+function RestTimePicker({ duration, onDurationChange }: RestTimePickerProps) {
+  const minutes = Math.floor(duration / 60);
+  const seconds = duration % 60;
+
+  // Round seconds to nearest 5 for the picker
+  const roundedSeconds = Math.round(seconds / 5) * 5;
+
+  const handleMinutesChange = (newMinutes: number) => {
+    const validated = validateRestTime(newMinutes, roundedSeconds);
+    onDurationChange(validated);
+  };
+
+  const handleSecondsChange = (newSeconds: number) => {
+    const validated = validateRestTime(minutes, newSeconds);
+    onDurationChange(validated);
+  };
+
+  return (
+    <View className="items-center">
+      {/* Large Timer Display */}
+      <View className="flex-row items-center justify-center mb-4">
+        <Text className="font-primaryBold text-6xl text-primary">
+          {minutes.toString().padStart(2, "0")}
+        </Text>
+        <Text className="font-primaryBold text-6xl text-primary mx-2">:</Text>
+        <Text className="font-primaryBold text-6xl text-primary">
+          {roundedSeconds.toString().padStart(2, "0")}
+        </Text>
+      </View>
+
+      {/* Picker Wheels */}
+      <View className="flex-row items-center">
+        <View className="items-center">
+          <Text className="font-secondaryMedium text-xs text-gray-500 mb-1">
+            MIN
+          </Text>
+          <View className="w-20">
+            <TimeWheel
+              values={MINUTES_VALUES}
+              selectedValue={minutes}
+              onValueChange={handleMinutesChange}
+            />
+          </View>
+        </View>
+
+        <Text className="font-primaryBold text-2xl text-gray-400 mx-4">:</Text>
+
+        <View className="items-center">
+          <Text className="font-secondaryMedium text-xs text-gray-500 mb-1">
+            SEC
+          </Text>
+          <View className="w-20">
+            <TimeWheel
+              values={SECONDS_VALUES}
+              selectedValue={roundedSeconds}
+              onValueChange={handleSecondsChange}
+            />
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+}
 
 function RestTimer() {
   const { timer, startTimer, pauseTimer, resetTimer, setRestDuration } =
     useWorkoutStore();
   const [showPicker, setShowPicker] = useState(false);
-
-  const handleSelectDuration = (duration: number) => {
-    setRestDuration(duration);
-    setShowPicker(false);
-  };
 
   return (
     <Card className="mb-4">
@@ -57,7 +263,7 @@ function RestTimer() {
             className="bg-gray-200 dark:bg-gray-800 px-3 py-1 rounded-lg"
           >
             <Text className="font-secondaryMedium text-sm text-gray-700 dark:text-gray-300">
-              {formatTime(timer.duration)} ▼
+              {formatTime(timer.duration)} {showPicker ? "▲" : "▼"}
             </Text>
           </Pressable>
         )}
@@ -65,34 +271,21 @@ function RestTimer() {
 
       {/* Duration Picker */}
       {showPicker && !timer.isRunning && (
-        <View className="flex-row flex-wrap gap-2 mb-4">
-          {REST_DURATION_OPTIONS.map((option) => (
-            <Pressable
-              key={option.value}
-              onPress={() => handleSelectDuration(option.value)}
-              className={`px-3 py-2 rounded-lg ${
-                timer.duration === option.value
-                  ? "bg-primary"
-                  : "bg-gray-200 dark:bg-gray-700"
-              }`}
-            >
-              <Text
-                className={`font-secondaryMedium text-sm ${
-                  timer.duration === option.value
-                    ? "text-background-dark"
-                    : "text-gray-700 dark:text-gray-300"
-                }`}
-              >
-                {option.label}
-              </Text>
-            </Pressable>
-          ))}
+        <View className="py-4">
+          <RestTimePicker
+            duration={timer.duration}
+            onDurationChange={setRestDuration}
+          />
         </View>
       )}
 
-      <Text className="font-primaryBold text-4xl text-primary text-center my-4">
-        {formatTime(timer.remaining)}
-      </Text>
+      {/* Timer Display when running or idle without picker */}
+      {!showPicker && (
+        <Text className="font-primaryBold text-5xl text-primary text-center my-4">
+          {formatTime(timer.remaining)}
+        </Text>
+      )}
+
       <View className="flex-row gap-2">
         {timer.isRunning ? (
           <Pressable
@@ -105,7 +298,10 @@ function RestTimer() {
           </Pressable>
         ) : (
           <Pressable
-            onPress={() => startTimer(timer.duration)}
+            onPress={() => {
+              setShowPicker(false);
+              startTimer(timer.duration);
+            }}
             className="flex-1 bg-primary rounded-xl py-3"
           >
             <Text className="font-secondaryMedium text-background-dark text-center">
@@ -232,44 +428,121 @@ function AddExerciseForm({ autoOpen = false }: { autoOpen?: boolean }) {
   );
 }
 
-function AddSetForm({ exerciseId }: { exerciseId: string }) {
-  const [reps, setReps] = useState("");
-  const [weight, setWeight] = useState("");
-  const addSet = useWorkoutStore((s) => s.addSet);
+function SetRow({
+  exerciseId,
+  set,
+  index,
+  onFocus,
+}: {
+  exerciseId: string;
+  set: any;
+  index: number;
+  onFocus?: () => void;
+}) {
+  const { updateSet, toggleSetCompleted, removeSet } = useWorkoutStore();
+  const [reps, setReps] = useState(set.reps?.toString() ?? "");
+  const [weight, setWeight] = useState(set.weight?.toString() ?? "");
+  const [isEditing, setIsEditing] = useState(false);
 
-  const handleAdd = () => {
-    const r = parseInt(reps, 10);
-    const w = parseFloat(weight);
-    if (r > 0 && w >= 0) {
-      addSet(exerciseId, r, w);
-      setReps("");
-      setWeight("");
+  const handleRepsChange = (value: string) => {
+    setReps(value);
+    const parsed = value === "" ? null : parseInt(value, 10);
+    if (parsed === null || !isNaN(parsed)) {
+      updateSet(exerciseId, set.id, parsed, set.weight);
     }
   };
 
+  const handleWeightChange = (value: string) => {
+    setWeight(value);
+    const parsed = value === "" ? null : parseFloat(value);
+    if (parsed === null || !isNaN(parsed)) {
+      updateSet(exerciseId, set.id, set.reps, parsed);
+    }
+  };
+
+  const handleComplete = () => {
+    // Only allow completion if reps and weight are filled
+    if (set.reps !== null && set.weight !== null) {
+      toggleSetCompleted(exerciseId, set.id);
+    }
+  };
+
+  const handleFocus = () => {
+    // If this set was completed, uncomplete it when editing
+    if (set.completed) {
+      toggleSetCompleted(exerciseId, set.id);
+    }
+    setIsEditing(true);
+    onFocus?.();
+  };
+
+  const handleBlur = () => {
+    setIsEditing(false);
+  };
+
+  const handleRemove = () => {
+    removeSet(exerciseId, set.id);
+  };
+
+  const isReadyToComplete = set.reps !== null && set.weight !== null;
+  const showGreenBackground = set.completed && !isEditing;
+
   return (
-    <View className="flex-row gap-2 mt-3">
+    <View
+      className={`flex-row items-center py-2 rounded-lg ${
+        showGreenBackground ? "bg-primary/20" : ""
+      }`}
+    >
+      <Text className="w-10 font-secondary text-gray-900 dark:text-white text-center">
+        {index + 1}
+      </Text>
       <TextInput
         value={reps}
-        onChangeText={setReps}
-        placeholder="Reps"
+        onChangeText={handleRepsChange}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
+        placeholder="—"
         keyboardType="number-pad"
         placeholderTextColor="#9ca3af"
-        className="flex-1 font-secondary bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-gray-900 dark:text-white text-center"
+        className={`flex-1 font-secondary text-center py-1 mx-1 rounded-lg ${
+          showGreenBackground
+            ? "text-gray-900 dark:text-white bg-transparent"
+            : "text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800"
+        }`}
       />
       <TextInput
         value={weight}
-        onChangeText={setWeight}
-        placeholder="Weight"
+        onChangeText={handleWeightChange}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
+        placeholder="—"
         keyboardType="decimal-pad"
         placeholderTextColor="#9ca3af"
-        className="flex-1 font-secondary bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-gray-900 dark:text-white text-center"
+        className={`flex-1 font-secondary text-center py-1 mx-1 rounded-lg ${
+          showGreenBackground
+            ? "text-gray-900 dark:text-white bg-transparent"
+            : "text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800"
+        }`}
       />
       <Pressable
-        onPress={handleAdd}
-        className="bg-primary rounded-xl px-4 py-2"
+        onPress={handleComplete}
+        disabled={!isReadyToComplete && !set.completed}
+        className="w-10 items-center"
       >
-        <Text className="font-secondaryMedium text-background-dark">+</Text>
+        <Text
+          className={`text-lg ${
+            set.completed
+              ? "text-green-600"
+              : isReadyToComplete
+                ? "text-gray-600 dark:text-gray-400"
+                : "text-gray-300 dark:text-gray-700"
+          }`}
+        >
+          {set.completed ? "✓" : "○"}
+        </Text>
+      </Pressable>
+      <Pressable onPress={handleRemove} className="w-8 items-center">
+        <Text className="text-red-500 text-sm">✕</Text>
       </Pressable>
     </View>
   );
@@ -313,7 +586,7 @@ function LastSessionSummary({ exerciseName }: { exerciseName: string }) {
                 Set {index + 1}
               </Text>
               <Text className="flex-1 font-secondaryMedium text-xs text-gray-700 dark:text-gray-300 text-right">
-                {set.reps} reps × {set.weight} kg
+                {set.reps ?? 0} reps × {set.weight ?? 0} kg
               </Text>
             </View>
           ))}
@@ -324,7 +597,23 @@ function LastSessionSummary({ exerciseName }: { exerciseName: string }) {
 }
 
 function ExerciseCard({ exercise }: { exercise: any }) {
-  const { toggleSetCompleted, removeExercise } = useWorkoutStore();
+  const { removeExercise, addSet, toggleSetCompleted } = useWorkoutStore();
+
+  // Auto-complete the previous set when focusing on a new set
+  const handleSetFocus = (currentIndex: number) => {
+    if (currentIndex > 0) {
+      const previousSet = exercise.sets[currentIndex - 1];
+      // Only auto-complete if the previous set has reps and weight and is not already completed
+      if (
+        previousSet &&
+        !previousSet.completed &&
+        previousSet.reps !== null &&
+        previousSet.weight !== null
+      ) {
+        toggleSetCompleted(exercise.id, previousSet.id);
+      }
+    }
+  };
 
   return (
     <Card className="mb-3">
@@ -339,48 +628,43 @@ function ExerciseCard({ exercise }: { exercise: any }) {
 
       <LastSessionSummary exerciseName={exercise.name} />
 
-      {exercise.sets.length > 0 && (
-        <View className="mb-2">
-          <View className="flex-row mb-1">
-            <Text className="flex-1 font-secondaryMedium text-gray-500 text-center text-sm">
-              Set
-            </Text>
-            <Text className="flex-1 font-secondaryMedium text-gray-500 text-center text-sm">
-              Reps
-            </Text>
-            <Text className="flex-1 font-secondaryMedium text-gray-500 text-center text-sm">
-              Weight Kgs
-            </Text>
-            <Text className="w-16 font-secondaryMedium text-gray-500 text-center text-sm">
-              Done
-            </Text>
-          </View>
-          {exercise.sets.map((set: any, index: number) => (
-            <Pressable
-              key={set.id}
-              onPress={() => toggleSetCompleted(exercise.id, set.id)}
-              className={`flex-row py-2 rounded-lg ${
-                set.completed ? "bg-primary/20" : ""
-              }`}
-            >
-              <Text className="flex-1 font-secondary text-gray-900 dark:text-white text-center">
-                {index + 1}
-              </Text>
-              <Text className="flex-1 font-secondary text-gray-900 dark:text-white text-center">
-                {set.reps}
-              </Text>
-              <Text className="flex-1 font-secondary text-gray-900 dark:text-white text-center">
-                {set.weight}
-              </Text>
-              <Text className="w-16 text-center">
-                {set.completed ? "✓" : "○"}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-      )}
+      {/* Sets Table Header */}
+      <View className="flex-row mb-1 mt-2">
+        <Text className="w-10 font-secondaryMedium text-gray-500 text-center text-sm">
+          Set
+        </Text>
+        <Text className="flex-1 font-secondaryMedium text-gray-500 text-center text-sm">
+          Reps
+        </Text>
+        <Text className="flex-1 font-secondaryMedium text-gray-500 text-center text-sm">
+          kg
+        </Text>
+        <Text className="w-10 font-secondaryMedium text-gray-500 text-center text-sm">
+          ✓
+        </Text>
+        <Text className="w-8" />
+      </View>
 
-      <AddSetForm exerciseId={exercise.id} />
+      {/* Sets Rows - Inline Editable */}
+      {exercise.sets.map((set: any, index: number) => (
+        <SetRow
+          key={set.id}
+          exerciseId={exercise.id}
+          set={set}
+          index={index}
+          onFocus={() => handleSetFocus(index)}
+        />
+      ))}
+
+      {/* Add Working Set Button */}
+      <Pressable
+        onPress={() => addSet(exercise.id)}
+        className="mt-3 py-2 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg"
+      >
+        <Text className="font-secondaryMedium text-gray-500 text-center text-sm">
+          + Add working set
+        </Text>
+      </Pressable>
     </Card>
   );
 }

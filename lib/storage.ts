@@ -1,10 +1,11 @@
 import { EXERCISE_CATALOG } from "@/data/exercises";
-import { ExerciseTemplate, WorkoutSession } from "@/types";
+import { ExerciseTemplate, Feedback, WorkoutSession } from "@/types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const WORKOUTS_KEY = "fitai_workouts";
 const EXERCISES_KEY = "fitai_exercises";
 const SEED_FLAG_KEY = "fitai_exercises_seeded";
+const FEEDBACK_KEY = "fitai_feedback";
 
 // Workout session storage
 export async function saveWorkout(workout: WorkoutSession): Promise<void> {
@@ -78,4 +79,44 @@ export async function seedExercises(): Promise<void> {
   } catch (error) {
     console.error("Failed to seed exercises:", error);
   }
+}
+
+// Feedback storage
+export async function getFeedback(): Promise<Feedback[]> {
+  try {
+    const data = await AsyncStorage.getItem(FEEDBACK_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch (error) {
+    console.error("Failed to load feedback:", error);
+    return [];
+  }
+}
+
+export async function saveFeedback(feedback: Feedback[]): Promise<void> {
+  try {
+    await AsyncStorage.setItem(FEEDBACK_KEY, JSON.stringify(feedback));
+  } catch (error) {
+    console.error("Failed to save feedback:", error);
+  }
+}
+
+export async function addFeedback(content: string): Promise<Feedback> {
+  const newFeedback: Feedback = {
+    id: Date.now().toString(),
+    content,
+    createdAt: Date.now(),
+    upvotes: 0,
+  };
+
+  const existing = await getFeedback();
+  await saveFeedback([newFeedback, ...existing]);
+  return newFeedback;
+}
+
+export async function upvoteFeedback(id: string): Promise<void> {
+  const feedbacks = await getFeedback();
+  const updated = feedbacks.map((f) =>
+    f.id === id ? { ...f, upvotes: f.upvotes + 1 } : f,
+  );
+  await saveFeedback(updated);
 }
