@@ -275,6 +275,54 @@ function AddSetForm({ exerciseId }: { exerciseId: string }) {
   );
 }
 
+function LastSessionSummary({ exerciseName }: { exerciseName: string }) {
+  const { getLastSessionForExercise } = useWorkoutStore();
+  const [isExpanded, setIsExpanded] = useState(true);
+  const lastSession = getLastSessionForExercise(exerciseName);
+
+  if (!lastSession) {
+    return null; // Don't show anything if no previous session exists
+  }
+
+  // Only count completed sets as working sets
+  const workingSets = lastSession.sets.filter((set) => set.completed);
+
+  if (workingSets.length === 0) {
+    return null;
+  }
+
+  return (
+    <Pressable
+      onPress={() => setIsExpanded(!isExpanded)}
+      className="mb-3 border-t border-gray-200 dark:border-gray-700 pt-2"
+    >
+      <View className="flex-row items-center justify-between mb-2">
+        <Text className="font-secondaryMedium text-xs text-gray-500 uppercase tracking-wide">
+          Last Session ({workingSets.length} sets)
+        </Text>
+        <Text className="font-secondary text-gray-400 text-xs">
+          {isExpanded ? "▼" : "▶"}
+        </Text>
+      </View>
+
+      {isExpanded && (
+        <View className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-2">
+          {workingSets.map((set, index) => (
+            <View key={set.id} className="flex-row py-1">
+              <Text className="flex-1 font-secondary text-xs text-gray-600 dark:text-gray-400">
+                Set {index + 1}
+              </Text>
+              <Text className="flex-1 font-secondaryMedium text-xs text-gray-700 dark:text-gray-300 text-right">
+                {set.reps} reps × {set.weight} kg
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
+    </Pressable>
+  );
+}
+
 function ExerciseCard({ exercise }: { exercise: any }) {
   const { toggleSetCompleted, removeExercise } = useWorkoutStore();
 
@@ -289,6 +337,8 @@ function ExerciseCard({ exercise }: { exercise: any }) {
         </Pressable>
       </View>
 
+      <LastSessionSummary exerciseName={exercise.name} />
+
       {exercise.sets.length > 0 && (
         <View className="mb-2">
           <View className="flex-row mb-1">
@@ -299,7 +349,7 @@ function ExerciseCard({ exercise }: { exercise: any }) {
               Reps
             </Text>
             <Text className="flex-1 font-secondaryMedium text-gray-500 text-center text-sm">
-              Weight
+              Weight Kgs
             </Text>
             <Text className="w-16 font-secondaryMedium text-gray-500 text-center text-sm">
               Done
@@ -361,7 +411,7 @@ export default function WorkoutSessionScreen() {
         </View>
 
         <RestTimer />
-        <AddExerciseForm autoOpen={currentWorkout.exercises.length === 0} />
+        <AddExerciseForm />
 
         {currentWorkout.exercises.map((exercise) => (
           <ExerciseCard key={exercise.id} exercise={exercise} />

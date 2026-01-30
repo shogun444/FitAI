@@ -15,8 +15,7 @@ export default function HomeScreen() {
   }, []);
 
   const handleStartWorkout = () => {
-    startWorkout();
-    router.push("/workout/session" as Href);
+    router.push("/workout/select-exercises" as Href);
   };
 
   const handleContinueWorkout = () => {

@@ -12,7 +12,7 @@ interface WorkoutStore {
 
   // Timer state
   timer: TimerState;
-  timerInterval: NodeJS.Timeout | null;
+  timerInterval: ReturnType<typeof setInterval> | null;
 
   // Workout actions
   startWorkout: () => void;
@@ -36,6 +36,9 @@ interface WorkoutStore {
 
   // Persistence
   loadWorkouts: () => Promise<void>;
+
+  // History lookup
+  getLastSessionForExercise: (exerciseName: string) => Exercise | null;
 }
 
 export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
@@ -298,5 +301,23 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
   loadWorkouts: async () => {
     const workouts = await getWorkouts();
     set({ pastWorkouts: workouts });
+  },
+
+  getLastSessionForExercise: (exerciseName: string) => {
+    const { pastWorkouts } = get();
+
+    // Iterate through workouts from most recent to oldest
+    for (const workout of pastWorkouts) {
+      // Find the exercise with matching name (case-insensitive)
+      const exercise = workout.exercises.find(
+        (ex) => ex.name.toLowerCase() === exerciseName.toLowerCase(),
+      );
+
+      if (exercise && exercise.sets.length > 0) {
+        return exercise;
+      }
+    }
+
+    return null;
   },
 }));
