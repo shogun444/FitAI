@@ -125,7 +125,11 @@ export default function SelectExercisesScreen() {
       {/* Fixed Button at Bottom */}
       <View className="px-4 py-4 bg-background-light dark:bg-background-dark border-t border-gray-200 dark:border-gray-800">
         <Button
-          title={`Start Workout (${selectedExercises.length}/${MIN_EXERCISES_REQUIRED})`}
+          title={
+            selectedExercises.length > 2
+              ? "Ready to go!"
+              : `Start Workout (${selectedExercises.length}/${MIN_EXERCISES_REQUIRED})`
+          }
           onPress={handleStartWorkout}
           disabled={!isStartEnabled}
         />
