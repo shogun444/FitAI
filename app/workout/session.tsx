@@ -2,6 +2,7 @@ import { Button, Card, Heading, Subheading } from "@/components";
 import { getExercises } from "@/lib/storage";
 import { useWorkoutStore } from "@/store";
 import { ExerciseTemplate } from "@/types";
+import { useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   FlatList,
@@ -698,7 +699,18 @@ function ExerciseCard({ exercise }: { exercise: any }) {
 }
 
 export default function WorkoutSessionScreen() {
+  const router = useRouter();
   const { currentWorkout, endWorkout, cancelWorkout } = useWorkoutStore();
+
+  const handleFinishWorkout = async () => {
+    await endWorkout();
+    router.replace("/workout/summary");
+  };
+
+  const handleCancelWorkout = () => {
+    cancelWorkout();
+    router.replace("/");
+  };
 
   if (!currentWorkout) {
     return (
@@ -730,11 +742,11 @@ export default function WorkoutSessionScreen() {
         ))}
 
         <View className="gap-3 mt-4 mb-8">
-          <Button title="Finish Workout" onPress={endWorkout} />
+          <Button title="Finish Workout" onPress={handleFinishWorkout} />
           <Button
             title="Cancel Workout"
             variant="secondary"
-            onPress={cancelWorkout}
+            onPress={handleCancelWorkout}
           />
         </View>
       </ScrollView>

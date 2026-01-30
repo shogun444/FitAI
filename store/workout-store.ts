@@ -26,6 +26,7 @@ function isSetTouched(set: WorkoutSet): boolean {
 interface WorkoutStore {
   // Current workout session
   currentWorkout: WorkoutSession | null;
+  lastCompletedWorkout: WorkoutSession | null;
   pastWorkouts: WorkoutSession[];
 
   // Timer state
@@ -67,6 +68,7 @@ interface WorkoutStore {
 
 export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
   currentWorkout: null,
+  lastCompletedWorkout: null,
   pastWorkouts: [],
   timer: {
     isRunning: false,
@@ -115,6 +117,7 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
 
     set((state) => ({
       currentWorkout: null,
+      lastCompletedWorkout: completedWorkout,
       pastWorkouts: [completedWorkout, ...state.pastWorkouts],
       timer: {
         isRunning: false,
