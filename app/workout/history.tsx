@@ -1,0 +1,118 @@
+import { Card, Heading, Subheading } from "@/components";
+import { useWorkoutStore } from "@/store";
+import { WorkoutSession } from "@/types";
+import { useEffect } from "react";
+import { ScrollView, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+function formatDuration(seconds: number): string {
+  const hrs = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  if (hrs > 0) {
+    return `${hrs}h ${mins}m`;
+  }
+  return `${mins}m`;
+}
+
+function formatDate(timestamp: number): string {
+  return new Date(timestamp).toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function WorkoutCard({ workout }: { workout: WorkoutSession }) {
+  const totalSets = workout.exercises.reduce(
+    (acc, ex) => acc + ex.sets.length,
+    0,
+  );
+  const completedSets = workout.exercises.reduce(
+    (acc, ex) => acc + ex.sets.filter((s) => s.completed).length,
+    0,
+  );
+
+  return (
+    <Card className="mb-3">
+      <View className="flex-row justify-between items-center mb-2">
+        <Text className="font-primarySemiBold text-lg text-gray-900 dark:text-white">
+          {formatDate(workout.startedAt)}
+        </Text>
+        <Text className="font-secondaryMedium text-gray-500">
+          {formatDuration(workout.duration)}
+        </Text>
+      </View>
+
+      <View className="flex-row gap-4">
+        <View>
+          <Text className="font-secondary text-sm text-gray-500">
+            Exercises
+          </Text>
+          <Text className="font-primarySemiBold text-gray-900 dark:text-white">
+            {workout.exercises.length}
+          </Text>
+        </View>
+        <View>
+          <Text className="font-secondary text-sm text-gray-500">Sets</Text>
+          <Text className="font-primarySemiBold text-gray-900 dark:text-white">
+            {completedSets}/{totalSets}
+          </Text>
+        </View>
+      </View>
+
+      {workout.exercises.length > 0 && (
+        <View className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+          {workout.exercises.slice(0, 3).map((ex) => (
+            <View key={ex.id} className="mb-2">
+              <Text className="font-secondary text-gray-600 dark:text-gray-400 mb-1">
+                • {ex.name} ({ex.sets.length} sets)
+              </Text>
+              {ex.sets.map((set, idx) => (
+                <Text
+                  key={set.id}
+                  className="font-secondary text-xs text-gray-500 dark:text-gray-500 ml-4"
+                >
+                  Set {idx + 1}: {set.reps} reps × {set.weight} kg
+                </Text>
+              ))}
+            </View>
+          ))}
+          {workout.exercises.length > 3 && (
+            <Text className="font-secondary text-gray-500 mt-1">
+              +{workout.exercises.length - 3} more
+            </Text>
+          )}
+        </View>
+      )}
+    </Card>
+  );
+}
+
+export default function HistoryScreen() {
+  const { pastWorkouts, loadWorkouts } = useWorkoutStore();
+
+  useEffect(() => {
+    loadWorkouts();
+  }, []);
+
+  return (
+    <SafeAreaView className="flex-1 bg-background-light dark:bg-background-dark">
+      <ScrollView className="flex-1 p-4">
+        <Heading className="mb-2">History</Heading>
+        <Subheading className="mb-6">Your past workouts</Subheading>
+
+        {pastWorkouts.length === 0 ? (
+          <Card>
+            <Text className="font-secondary text-gray-500 text-center py-8">
+              No workouts yet. Start your first workout!
+            </Text>
+          </Card>
+        ) : (
+          pastWorkouts.map((workout) => (
+            <WorkoutCard key={workout.id} workout={workout} />
+          ))
+        )}
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
