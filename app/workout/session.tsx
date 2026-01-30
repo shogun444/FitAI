@@ -44,6 +44,7 @@ interface TimeWheelProps {
 function TimeWheel({ values, selectedValue, onValueChange }: TimeWheelProps) {
   const scrollViewRef = useRef<ScrollView>(null);
   const isUserScrolling = useRef(false);
+  const isProgrammaticScroll = useRef(false);
 
   const initialIndex = values.indexOf(selectedValue);
 
@@ -52,10 +53,15 @@ function TimeWheel({ values, selectedValue, onValueChange }: TimeWheelProps) {
     if (!isUserScrolling.current && scrollViewRef.current) {
       const index = values.indexOf(selectedValue);
       if (index >= 0) {
+        isProgrammaticScroll.current = true;
         scrollViewRef.current.scrollTo({
           y: index * ITEM_HEIGHT,
-          animated: false,
+          animated: true,
         });
+        // Clear flag after scroll completes
+        setTimeout(() => {
+          isProgrammaticScroll.current = false;
+        }, 300);
       }
     }
   }, [selectedValue, values]);
@@ -73,19 +79,22 @@ function TimeWheel({ values, selectedValue, onValueChange }: TimeWheelProps) {
         });
       }
 
-      // Update the value
+      // Always update the value from scroll position
       const newValue = values[clampedIndex];
-      if (newValue !== selectedValue) {
-        onValueChange(newValue);
-      }
+      onValueChange(newValue);
 
       isUserScrolling.current = false;
     },
-    [values, onValueChange, selectedValue],
+    [values, onValueChange],
   );
 
   const handleScrollEnd = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      // Ignore scroll end events triggered by programmatic scrolls
+      if (isProgrammaticScroll.current) {
+        isUserScrolling.current = false;
+        return;
+      }
       const offsetY = event.nativeEvent.contentOffset.y;
       snapToNearestItem(offsetY);
     },
@@ -177,12 +186,17 @@ function validateRestTime(minutes: number, seconds: number): number {
 interface RestTimePickerProps {
   duration: number;
   onDurationChange: (seconds: number) => void;
+  onTogglePicker?: () => void;
 }
 
 const MINUTES_VALUES = Array.from({ length: 11 }, (_, i) => i); // 0-10
 const SECONDS_VALUES = Array.from({ length: 12 }, (_, i) => i * 5); // 0, 5, 10, ... 55
 
-function RestTimePicker({ duration, onDurationChange }: RestTimePickerProps) {
+function RestTimePicker({
+  duration,
+  onDurationChange,
+  onTogglePicker,
+}: RestTimePickerProps) {
   const minutes = Math.floor(duration / 60);
   const seconds = duration % 60;
 
@@ -190,11 +204,17 @@ function RestTimePicker({ duration, onDurationChange }: RestTimePickerProps) {
   const roundedSeconds = Math.round(seconds / 5) * 5;
 
   const handleMinutesChange = (newMinutes: number) => {
-    const validated = validateRestTime(newMinutes, roundedSeconds);
+    // When minutes = 10, force seconds to 0 (max is 10:00)
+    const effectiveSeconds = newMinutes >= 10 ? 0 : roundedSeconds;
+    const validated = validateRestTime(newMinutes, effectiveSeconds);
     onDurationChange(validated);
   };
 
   const handleSecondsChange = (newSeconds: number) => {
+    // When minutes = 10, ignore seconds changes (max is 10:00)
+    if (minutes >= 10) {
+      return;
+    }
     const validated = validateRestTime(minutes, newSeconds);
     onDurationChange(validated);
   };
@@ -202,15 +222,17 @@ function RestTimePicker({ duration, onDurationChange }: RestTimePickerProps) {
   return (
     <View className="items-center">
       {/* Large Timer Display */}
-      <View className="flex-row items-center justify-center mb-4">
-        <Text className="font-primaryBold text-6xl text-primary">
-          {minutes.toString().padStart(2, "0")}
-        </Text>
-        <Text className="font-primaryBold text-6xl text-primary mx-2">:</Text>
-        <Text className="font-primaryBold text-6xl text-primary">
-          {roundedSeconds.toString().padStart(2, "0")}
-        </Text>
-      </View>
+      <Pressable onPress={onTogglePicker}>
+        <View className="flex-row items-center justify-center mb-4">
+          <Text className="font-primaryBold text-6xl text-primary">
+            {minutes.toString().padStart(2, "0")}
+          </Text>
+          <Text className="font-primaryBold text-6xl text-primary mx-2">:</Text>
+          <Text className="font-primaryBold text-6xl text-primary">
+            {roundedSeconds.toString().padStart(2, "0")}
+          </Text>
+        </View>
+      </Pressable>
 
       {/* Picker Wheels */}
       <View className="flex-row items-center">
@@ -259,7 +281,7 @@ function RestTimer() {
         </Text>
         {!timer.isRunning && (
           <Pressable
-            onPress={() => setShowPicker(!showPicker)}
+            onPress={() => setShowPicker((prev) => !prev)}
             className="bg-gray-200 dark:bg-gray-800 px-3 py-1 rounded-lg"
           >
             <Text className="font-secondaryMedium text-sm text-gray-700 dark:text-gray-300">
@@ -275,15 +297,21 @@ function RestTimer() {
           <RestTimePicker
             duration={timer.duration}
             onDurationChange={setRestDuration}
+            onTogglePicker={() => setShowPicker(false)}
           />
         </View>
       )}
 
       {/* Timer Display when running or idle without picker */}
       {!showPicker && (
-        <Text className="font-primaryBold text-5xl text-primary text-center my-4">
-          {formatTime(timer.remaining)}
-        </Text>
+        <Pressable
+          onPress={() => !timer.isRunning && setShowPicker(true)}
+          disabled={timer.isRunning}
+        >
+          <Text className="font-primaryBold text-5xl text-primary text-center my-4">
+            {formatTime(timer.remaining)}
+          </Text>
+        </Pressable>
       )}
 
       <View className="flex-row gap-2">
