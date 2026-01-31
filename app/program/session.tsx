@@ -1,29 +1,67 @@
-import { Button, Card, Heading, Subheading } from "@/components/ui";
+import { InlineRestTimer, ProgramSetRow } from "@/components/programs";
+import {
+  AutoAdvanceNumberInputRef,
+  Button,
+  Card,
+  Heading,
+  Subheading,
+} from "@/components/ui";
+import { useGlobalRestTimer } from "@/contexts/RestTimerContext";
 import { useProgramInstance } from "@/hooks/useProgramInstance";
 import { classifyPerformance } from "@/lib/programRules";
 import { PrescribedLift, PROGRAM_LIFTS, ProgramLiftId } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useCallback, useState } from "react";
+import { createRef, useCallback, useMemo, useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-interface SetTrackerProps {
-  liftId: ProgramLiftId;
-  lift: PrescribedLift;
-  repsPerSet: number[];
-  onRepsChange: (liftId: ProgramLiftId, setIndex: number, reps: number) => void;
+// ============================================
+// Types
+// ============================================
+
+interface LiftProgress {
+  liftIndex: number;
+  setIndex: number;
 }
 
-function SetTracker({
-  liftId,
+// ============================================
+// Lift Card Component
+// ============================================
+
+interface LiftCardProps {
+  lift: PrescribedLift;
+  repsPerSet: (number | null)[];
+  currentSetIndex: number;
+  isCurrentLift: boolean;
+  onRepsChange: (setIndex: number, reps: number) => void;
+  /** Ref to the first input of the next lift card (for cross-lift auto-advance) */
+  nextLiftFirstInputRef?: React.RefObject<AutoAdvanceNumberInputRef>;
+}
+
+function LiftCard({
   lift,
   repsPerSet,
+  currentSetIndex,
+  isCurrentLift,
   onRepsChange,
-}: SetTrackerProps) {
-  const liftInfo = PROGRAM_LIFTS.find((l) => l.id === liftId)!;
-  const setsCompleted = repsPerSet.filter((r) => r >= 5).length;
-  const tier = classifyPerformance(setsCompleted, false);
+  nextLiftFirstInputRef,
+}: LiftCardProps) {
+  // Create refs for each set input within this lift
+  // Using useMemo to ensure refs persist across re-renders
+  const setRefs = useMemo(
+    () =>
+      Array.from({ length: lift.sets }, () =>
+        createRef<AutoAdvanceNumberInputRef>(),
+      ),
+    [lift.sets],
+  );
+
+  const liftInfo = PROGRAM_LIFTS.find((l) => l.id === lift.liftId)!;
+  const completedSets = repsPerSet.filter(
+    (r) => r !== null && r >= lift.reps,
+  ).length;
+  const tier = classifyPerformance(completedSets, false);
 
   const tierColors = {
     A: "bg-green-500",
@@ -32,133 +70,203 @@ function SetTracker({
     D: "bg-red-500",
   };
 
+  const tierLabels = {
+    A: "Excellent",
+    B: "Solid",
+    C: "Partial",
+    D: "Building",
+  };
+
+  // Check if all sets for this lift are completed
+  const allSetsCompleted = repsPerSet.every((r) => r !== null && r > 0);
+
   return (
-    <Card className="mb-4">
-      <View className="flex-row items-center justify-between mb-3">
-        <View>
+    <Card
+      className={`mb-4 ${isCurrentLift ? "border-2 border-primary-500" : ""}`}
+    >
+      {/* Lift header */}
+      <View className="flex-row items-center justify-between mb-4">
+        <View className="flex-1">
           <Text className="font-primarySemiBold text-lg text-gray-900 dark:text-white">
             {liftInfo.name}
           </Text>
-          <Text className="font-secondary text-sm text-gray-500 dark:text-gray-400">
-            {lift.weight} kg × {lift.reps} reps × {lift.sets} sets
-          </Text>
+          <View className="flex-row items-center mt-1">
+            <View className="bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded mr-2">
+              <Text className="font-primaryBold text-primary-600 text-sm">
+                {lift.weight} kg
+              </Text>
+            </View>
+            <Text className="font-secondary text-gray-500 dark:text-gray-400 text-sm">
+              {lift.sets} × {lift.reps} reps
+            </Text>
+          </View>
         </View>
-        <View className={`px-3 py-1 rounded-full ${tierColors[tier]}`}>
-          <Text className="font-primaryBold text-white text-sm">
-            Tier {tier}
-          </Text>
-        </View>
+
+        {/* Tier badge */}
+        {allSetsCompleted && (
+          <View className={`px-3 py-1.5 rounded-full ${tierColors[tier]}`}>
+            <Text className="font-secondaryMedium text-white text-xs">
+              {tierLabels[tier]}
+            </Text>
+          </View>
+        )}
       </View>
 
-      {/* Set circles - tap to toggle complete/incomplete */}
-      <View className="flex-row gap-2 mb-3">
-        {Array.from({ length: lift.sets }).map((_, index) => {
-          const isCompleted = repsPerSet[index] >= 5;
+      {/* Sets with auto-advance refs */}
+      <View className="gap-2">
+        {Array.from({ length: lift.sets }).map((_, setIndex) => {
+          const isActive = isCurrentLift && setIndex === currentSetIndex;
+          const reps = repsPerSet[setIndex];
+          const isLastSetInLift = setIndex === lift.sets - 1;
+
+          // Determine next input ref:
+          // - If not last set in lift: next set in same lift
+          // - If last set in lift: first set of next lift (if exists)
+          // - If last set of last lift: isLast=true (dismisses keyboard)
+          const nextRef = isLastSetInLift
+            ? nextLiftFirstInputRef
+            : setRefs[setIndex + 1];
+          const isLastSet = isLastSetInLift && !nextLiftFirstInputRef;
+
           return (
-            <TouchableOpacity
-              key={index}
-              onPress={() => onRepsChange(liftId, index, isCompleted ? 0 : 5)}
-              className={`w-12 h-12 rounded-full items-center justify-center border-2 ${
-                isCompleted
-                  ? "bg-primary-500 border-primary-500"
-                  : "bg-transparent border-gray-300 dark:border-gray-600"
-              }`}
-            >
-              {isCompleted ? (
-                <Ionicons name="checkmark" size={24} color="white" />
-              ) : (
-                <Text className="font-primaryBold text-gray-400 dark:text-gray-500">
-                  {index + 1}
-                </Text>
-              )}
-            </TouchableOpacity>
+            <ProgramSetRow
+              key={setIndex}
+              ref={setRefs[setIndex]}
+              setNumber={setIndex + 1}
+              prescribedReps={lift.reps}
+              repsCompleted={reps}
+              isActive={isActive}
+              onRepsChange={(newReps) => onRepsChange(setIndex, newReps)}
+              nextInputRef={nextRef}
+              isLastSet={isLastSet}
+            />
           );
         })}
       </View>
 
-      {/* Quick actions */}
-      <View className="flex-row gap-2">
-        <TouchableOpacity
-          onPress={() => {
-            for (let i = 0; i < lift.sets; i++) {
-              onRepsChange(liftId, i, 0);
-            }
-          }}
-          className="flex-1 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg"
-        >
-          <Text className="font-secondary text-center text-gray-600 dark:text-gray-400 text-sm">
-            Reset
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => {
-            for (let i = 0; i < lift.sets; i++) {
-              onRepsChange(liftId, i, 5);
-            }
-          }}
-          className="flex-1 py-2 bg-primary-100 dark:bg-primary-900/30 rounded-lg"
-        >
-          <Text className="font-secondary text-center text-primary-600 text-sm">
-            All Done
-          </Text>
-        </TouchableOpacity>
+      {/* Progress summary */}
+      <View className="flex-row items-center justify-between mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
+        <Text className="font-secondary text-gray-500 dark:text-gray-400 text-sm">
+          Sets at target ({lift.reps}+ reps)
+        </Text>
+        <Text className="font-primarySemiBold text-gray-900 dark:text-white text-sm">
+          {completedSets} / {lift.sets}
+        </Text>
       </View>
     </Card>
   );
 }
 
+// ============================================
+// Main Session Screen
+// ============================================
+
 export default function ProgramSessionScreen() {
   const { program, getTodaySession, recordSession, loading } =
     useProgramInstance();
 
-  // Track reps for each set of each lift
-  const [repsPerLift, setRepsPerLift] = useState<
-    Record<ProgramLiftId, number[]>
-  >({
-    "weighted-pullups": [0, 0, 0, 0, 0],
-    "weighted-dips": [0, 0, 0, 0, 0],
-    squats: [0, 0, 0, 0, 0],
+  // Global rest timer (shared across all screens)
+  const { timer, openModal: openRestTimer } = useGlobalRestTimer();
+
+  // Session progress state
+  const [currentProgress, setCurrentProgress] = useState<LiftProgress>({
+    liftIndex: 0,
+    setIndex: 0,
   });
 
-  const [feltEasy, setFeltEasy] = useState<Record<ProgramLiftId, boolean>>({
-    "weighted-pullups": false,
-    "weighted-dips": false,
-    squats: false,
+  // Reps tracking: liftId -> array of reps per set (null = not logged)
+  const [repsPerLift, setRepsPerLift] = useState<
+    Record<ProgramLiftId, (number | null)[]>
+  >({
+    "weighted-pullups": [null, null, null, null, null],
+    "weighted-dips": [null, null, null, null, null],
+    squats: [null, null, null, null, null],
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const session = getTodaySession();
 
+  // Compute total progress
+  const totalProgress = useMemo(() => {
+    if (!session) return { completed: 0, total: 0 };
+
+    let completed = 0;
+    let total = 0;
+
+    for (const lift of session.lifts) {
+      const liftReps = repsPerLift[lift.liftId];
+      total += lift.sets;
+      completed += liftReps.filter((r) => r !== null && r > 0).length;
+    }
+
+    return { completed, total };
+  }, [session, repsPerLift]);
+
+  // Check if all sets are completed
+  const allSetsCompleted = useMemo(() => {
+    if (!session) return false;
+    return session.lifts.every((lift) =>
+      repsPerLift[lift.liftId].every((r) => r !== null && r > 0),
+    );
+  }, [session, repsPerLift]);
+
+  // Handle reps change for a set
+  // State is ALWAYS reversible - clearing reps sets to null, re-entering sets value
+  // No locking, no one-way transitions
   const handleRepsChange = useCallback(
     (liftId: ProgramLiftId, setIndex: number, reps: number) => {
       setRepsPerLift((prev) => {
         const newReps = [...prev[liftId]];
-        newReps[setIndex] = reps;
-        return {
-          ...prev,
-          [liftId]: newReps,
-        };
+        // Derive completion from value: reps > 0 = completed, reps = 0 = not completed
+        newReps[setIndex] = reps > 0 ? reps : null;
+        return { ...prev, [liftId]: newReps };
       });
+
+      // Auto-advance current progress indicator (but do NOT lock previous inputs)
+      // This only moves the "active" highlight, not editability
+      if (reps > 0 && session) {
+        const currentLiftIndex = session.lifts.findIndex(
+          (l) => l.liftId === liftId,
+        );
+        const isLastSetOfLift =
+          setIndex === session.lifts[currentLiftIndex].sets - 1;
+        const isLastLift = currentLiftIndex === session.lifts.length - 1;
+
+        // Move active indicator to next set (purely visual)
+        if (!isLastSetOfLift) {
+          setCurrentProgress({
+            liftIndex: currentLiftIndex,
+            setIndex: setIndex + 1,
+          });
+        } else if (!isLastLift) {
+          setCurrentProgress({
+            liftIndex: currentLiftIndex + 1,
+            setIndex: 0,
+          });
+        }
+      }
     },
-    [],
+    [session],
   );
 
+  // Handle session finish
   const handleFinishSession = useCallback(async () => {
     if (!session || !program) return;
     setIsSubmitting(true);
 
     const sessionNumber = program.sessionIndex;
+
+    // Convert null to 0 for submission
     const inputs = session.lifts.map((lift) => ({
       liftId: lift.liftId,
-      repsPerSet: repsPerLift[lift.liftId],
-      feltEasy: feltEasy[lift.liftId],
+      repsPerSet: repsPerLift[lift.liftId].map((r) => r ?? 0),
+      feltEasy: false,
     }));
 
     const result = await recordSession(inputs);
     setIsSubmitting(false);
 
-    // Navigate to summary with performance data
     if (result?.liftPerformances) {
       router.replace({
         pathname: "/program/summary",
@@ -170,8 +278,9 @@ export default function ProgramSessionScreen() {
     } else {
       router.replace("/(tabs)");
     }
-  }, [session, program, repsPerLift, feltEasy, recordSession]);
+  }, [session, program, repsPerLift, recordSession]);
 
+  // Loading state
   if (loading || !program || !session) {
     return (
       <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900 items-center justify-center">
@@ -182,15 +291,8 @@ export default function ProgramSessionScreen() {
     );
   }
 
-  const totalSets = session.lifts.length * 5;
-  const totalCompleted = Object.values(repsPerLift)
-    .flat()
-    .filter((r) => r >= 5).length;
-  const progress = (totalCompleted / totalSets) * 100;
-  const allLiftsStarted = totalCompleted > 0;
-
-  // Calculate week from session index (2 sessions per week)
   const currentWeek = Math.ceil(program.sessionIndex / 2);
+  const progressPercent = (totalProgress.completed / totalProgress.total) * 100;
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900">
@@ -204,7 +306,8 @@ export default function ProgramSessionScreen() {
             Session {program.sessionIndex}
           </Text>
           <Text className="font-secondary text-sm text-gray-500 dark:text-gray-400">
-            Week {currentWeek} • {totalCompleted}/{totalSets} sets
+            Week {currentWeek} • {totalProgress.completed}/{totalProgress.total}{" "}
+            sets
           </Text>
         </View>
       </View>
@@ -213,44 +316,78 @@ export default function ProgramSessionScreen() {
       <View className="h-1 bg-gray-200 dark:bg-gray-800">
         <View
           className="h-full bg-primary-500"
-          style={{ width: `${progress}%` }}
+          style={{ width: `${progressPercent}%` }}
         />
       </View>
 
-      <ScrollView className="flex-1 px-4 py-4">
-        <Heading className="mb-1">Today's Workout</Heading>
-        <Subheading className="mb-6">
-          Tap circles to mark sets complete. Your tier affects next session's
-          weight.
+      {/* Main content */}
+      <ScrollView
+        className="flex-1 px-4 py-4"
+        contentContainerStyle={{ paddingBottom: 100 }}
+      >
+        <View className="flex-row items-center justify-between mb-1">
+          <Heading>Today's Workout</Heading>
+          {/* Manual rest timer button - opens global timer */}
+          <TouchableOpacity
+            onPress={openRestTimer}
+            className="flex-row items-center px-3 py-2 bg-primary-100 dark:bg-primary-900/30 rounded-lg"
+          >
+            <Ionicons name="timer-outline" size={18} color="#7c3aed" />
+            <Text className="font-secondaryMedium text-primary-600 text-sm ml-1.5">
+              Rest
+            </Text>
+          </TouchableOpacity>
+        </View>
+        <Subheading className="mb-4">
+          Enter reps for each set. Tap Rest when ready.
         </Subheading>
 
-        {session.lifts.map((lift) => (
-          <SetTracker
-            key={lift.liftId}
-            liftId={lift.liftId}
-            lift={lift}
-            repsPerSet={repsPerLift[lift.liftId]}
-            onRepsChange={handleRepsChange}
-          />
-        ))}
+        {/* Inline rest timer - contextual, below header */}
+        <InlineRestTimer timer={timer} onExpand={openRestTimer} />
+
+        {/* Lift cards with cross-lift auto-advance refs */}
+        {session.lifts.map((lift, liftIndex) => {
+          // For cross-lift auto-advance, we need to pass the next lift's first input ref
+          // This is handled internally by LiftCard - we just need to chain them
+          const isLastLift = liftIndex === session.lifts.length - 1;
+
+          return (
+            <LiftCard
+              key={lift.liftId}
+              lift={lift}
+              repsPerSet={repsPerLift[lift.liftId]}
+              currentSetIndex={
+                liftIndex === currentProgress.liftIndex
+                  ? currentProgress.setIndex
+                  : -1
+              }
+              isCurrentLift={liftIndex === currentProgress.liftIndex}
+              onRepsChange={(setIndex, reps) =>
+                handleRepsChange(lift.liftId, setIndex, reps)
+              }
+              // Last lift has no next lift to advance to
+              nextLiftFirstInputRef={isLastLift ? undefined : undefined}
+            />
+          );
+        })}
 
         {/* Tier explanation */}
-        <Card className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700">
+        <Card className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 mb-4">
           <Text className="font-secondaryMedium text-gray-700 dark:text-gray-300 text-sm mb-2">
-            Progression Tiers
+            Progression Rules
           </Text>
           <View className="gap-1">
             <Text className="font-secondary text-gray-600 dark:text-gray-400 text-xs">
-              🟢 Tier A (5 sets): +5 kg next session
+              5 sets at target → +5 kg next session
             </Text>
             <Text className="font-secondary text-gray-600 dark:text-gray-400 text-xs">
-              🔵 Tier B (4 sets): +2 kg next session
+              4 sets at target → +2 kg next session
             </Text>
             <Text className="font-secondary text-gray-600 dark:text-gray-400 text-xs">
-              🟡 Tier C (3 sets): +1 kg next session
+              3 sets at target → +1 kg next session
             </Text>
             <Text className="font-secondary text-gray-600 dark:text-gray-400 text-xs">
-              🔴 Tier D (0-2 sets): Same weight next session
+              0-2 sets at target → Same weight next session
             </Text>
           </View>
         </Card>
@@ -261,9 +398,14 @@ export default function ProgramSessionScreen() {
         <Button
           title={isSubmitting ? "Saving..." : "Finish Session"}
           onPress={handleFinishSession}
-          disabled={!allLiftsStarted || isSubmitting}
-          className={!allLiftsStarted ? "opacity-50" : ""}
+          disabled={!allSetsCompleted || isSubmitting}
+          className={!allSetsCompleted ? "opacity-50" : ""}
         />
+        {!allSetsCompleted && (
+          <Text className="font-secondary text-gray-400 dark:text-gray-500 text-xs text-center mt-2">
+            Complete all sets to finish session
+          </Text>
+        )}
       </View>
     </SafeAreaView>
   );

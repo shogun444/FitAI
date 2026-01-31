@@ -1,10 +1,13 @@
 export { ActiveProgramCard } from "./ActiveProgramCard";
 export { CalibrationSummaryCard } from "./CalibrationSummaryCard";
+export { InlineRestTimer } from "./InlineRestTimer";
 export { LiftCalibrationCard } from "./LiftCalibrationCard";
-export { ProgressionBadge } from "./ProgressionBadge";
 export { ProgramAdviceCard } from "./ProgramAdviceCard";
 export { ProgramAdviceSection } from "./ProgramAdviceSection";
 export { ProgramCard } from "./ProgramCard";
 export { ProgramHeader } from "./ProgramHeader";
+export { ProgramRestTimer, RestTimerIndicator } from "./ProgramRestTimer";
+export { ProgramSetRow } from "./ProgramSetRow";
+export { ProgressionBadge } from "./ProgressionBadge";
 export { SessionSummaryCard } from "./SessionSummaryCard";
 export { WeightChangeRow } from "./WeightChangeRow";

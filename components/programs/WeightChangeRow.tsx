@@ -1,5 +1,5 @@
-import { Text, View } from "react-native";
 import { PerformanceTier, PROGRAM_LIFTS, ProgramLiftId } from "@/types";
+import { Text, View } from "react-native";
 import { ProgressionBadge } from "./ProgressionBadge";
 
 interface WeightChangeRowProps {
@@ -14,7 +14,7 @@ interface WeightChangeRowProps {
 /**
  * Displays weight transition for a lift.
  * Format: "30 kg → 35 kg (+5 kg)"
- * 
+ *
  * Visual hierarchy:
  * - Previous weight: muted
  * - Arrow: subtle
@@ -45,17 +45,17 @@ export function WeightChangeRow({
         <Text className="font-secondary text-gray-400 dark:text-gray-500 text-sm">
           {previousWeight} kg
         </Text>
-        
+
         {/* Arrow - subtle */}
         <Text className="font-secondary text-gray-300 dark:text-gray-600 text-sm mx-2">
           →
         </Text>
-        
+
         {/* New weight - emphasized */}
         <Text className="font-primarySemiBold text-gray-900 dark:text-white text-sm">
           {newWeight} kg
         </Text>
-        
+
         {/* Delta badge */}
         <ProgressionBadge delta={delta} tier={tier} className="ml-2" />
       </View>

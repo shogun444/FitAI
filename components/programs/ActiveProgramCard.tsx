@@ -24,7 +24,8 @@ function getLastSessionGains(program: ProgramInstance): {
   for (const lift of program.lifts) {
     if (lift.lastPerformance) {
       hasData = true;
-      const delta = lift.lastPerformance.nextWeight - lift.lastPerformance.weight;
+      const delta =
+        lift.lastPerformance.nextWeight - lift.lastPerformance.weight;
       totalDelta += delta;
     }
   }

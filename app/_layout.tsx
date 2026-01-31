@@ -1,5 +1,10 @@
 import "../global.css";
 
+import { InlineRestTimer, ProgramRestTimer } from "@/components/programs";
+import {
+  RestTimerProvider,
+  useGlobalRestTimer,
+} from "@/contexts/RestTimerContext";
 import {
   Inter_400Regular,
   Inter_500Medium,
@@ -17,10 +22,11 @@ import {
   ThemeProvider,
 } from "@react-navigation/native";
 import { useFonts } from "expo-font";
-import { Stack } from "expo-router";
+import { Stack, usePathname } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
+import { View } from "react-native";
 import "react-native-reanimated";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
@@ -81,7 +87,28 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+    <RestTimerProvider>
+      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+        <RootLayoutContent />
+        <StatusBar style="auto" />
+      </ThemeProvider>
+    </RestTimerProvider>
+  );
+}
+
+/**
+ * Inner layout component that can access RestTimerContext.
+ * Shows global rest timer indicator across all screens.
+ */
+function RootLayoutContent() {
+  const { timer, isModalVisible, openModal, closeModal } = useGlobalRestTimer();
+  const pathname = usePathname();
+
+  // Hide global timer on session page (it has its own inline timer)
+  const isSessionPage = pathname === "/program/session";
+
+  return (
+    <View className="flex-1">
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="workout" options={{ headerShown: false }} />
@@ -91,7 +118,20 @@ export default function RootLayout() {
           options={{ presentation: "modal", title: "Modal" }}
         />
       </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+
+      {/* Global Rest Timer Indicator - hidden on session page */}
+      {!isModalVisible && !isSessionPage && (
+        <View className="absolute top-28 left-4 right-4 z-40">
+          <InlineRestTimer timer={timer} onExpand={openModal} />
+        </View>
+      )}
+
+      {/* Global Rest Timer Modal */}
+      {isModalVisible && (
+        <View className="absolute inset-0 z-50">
+          <ProgramRestTimer timer={timer} onDismiss={closeModal} />
+        </View>
+      )}
+    </View>
   );
 }

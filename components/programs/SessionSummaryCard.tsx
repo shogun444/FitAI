@@ -1,6 +1,6 @@
-import { Text, View } from "react-native";
 import { Card } from "@/components/ui";
 import { LiftPerformance, PerformanceTier, PROGRAM_LIFTS } from "@/types";
+import { Text, View } from "react-native";
 import { WeightChangeRow } from "./WeightChangeRow";
 
 interface SessionSummaryCardProps {
@@ -28,7 +28,7 @@ function getTierReason(tier: PerformanceTier): string {
 /**
  * Displays session summary with weight progressions.
  * Shows after completing a program session.
- * 
+ *
  * For each lift:
  * - Previous → New weight (+X kg)
  * - Reason based on tier
@@ -40,7 +40,7 @@ export function SessionSummaryCard({
   // Calculate total weight increase across all lifts
   const totalDelta = performances.reduce(
     (sum, p) => sum + (p.nextWeight - p.weight),
-    0
+    0,
   );
 
   return (
@@ -67,7 +67,7 @@ export function SessionSummaryCard({
         {performances.map((perf) => {
           const delta = perf.nextWeight - perf.weight;
           const liftInfo = PROGRAM_LIFTS.find((l) => l.id === perf.liftId);
-          
+
           return (
             <View
               key={perf.liftId}

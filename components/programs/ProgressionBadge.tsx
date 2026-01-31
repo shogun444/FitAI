@@ -1,5 +1,5 @@
-import { Text, View } from "react-native";
 import { PerformanceTier } from "@/types";
+import { Text, View } from "react-native";
 
 interface ProgressionBadgeProps {
   delta: number;
@@ -10,7 +10,7 @@ interface ProgressionBadgeProps {
 /**
  * Displays weight progression as a badge.
  * Shows "+X kg" for increases, "Maintain" for no change.
- * 
+ *
  * Used in:
  * - Session summary (after workout)
  * - ActiveProgramCard (before next workout)

@@ -1,13 +1,13 @@
-import { Button, Card, Heading, Subheading } from "@/components/ui";
 import { SessionSummaryCard } from "@/components/programs";
-import { LiftPerformance, PROGRAM_LIFTS, PerformanceTier } from "@/types";
+import { Button, Card, Heading, Subheading } from "@/components/ui";
+import { LiftPerformance } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { SafeAreaView, ScrollView, Text, View } from "react-native";
 
 /**
  * Program Session Summary Screen
- * 
+ *
  * Shown after completing a program session.
  * Displays weight progressions with clear before/after comparisons.
  */
@@ -18,7 +18,7 @@ export default function ProgramSummaryScreen() {
   }>();
 
   const sessionNumber = parseInt(params.sessionNumber || "1", 10);
-  
+
   // Parse performances from route params
   let performances: LiftPerformance[] = [];
   try {
@@ -30,10 +30,10 @@ export default function ProgramSummaryScreen() {
   // Calculate totals
   const totalDelta = performances.reduce(
     (sum, p) => sum + (p.nextWeight - p.weight),
-    0
+    0,
   );
   const liftsWithIncrease = performances.filter(
-    (p) => p.nextWeight > p.weight
+    (p) => p.nextWeight > p.weight,
   ).length;
 
   const handleContinue = () => {
