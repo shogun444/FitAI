@@ -1,6 +1,14 @@
 import { EXERCISE_CATALOG } from "@/data/exercises";
-import { ExerciseTemplate, Feedback, WorkoutSession } from "@/types";
+import {
+  ExerciseTemplate,
+  Feedback,
+  WorkoutSession,
+  sanitizeFeedback,
+  toggleUpvote as toggleUpvotePure,
+} from "@/types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Crypto from "expo-crypto";
+import { getUserId } from "./user";
 
 const WORKOUTS_KEY = "fitai_workouts";
 const EXERCISES_KEY = "fitai_exercises";
@@ -82,41 +90,141 @@ export async function seedExercises(): Promise<void> {
 }
 
 // Feedback storage
+// ============================================
+// Architecture notes:
+// - All feedback operations are atomic (read-modify-write)
+// - upvotedBy array is the source of truth for upvotes
+// - Rapid tapping handled by optimistic UI + eventual consistency
+// - Corrupted data sanitized on load
+// ============================================
+
+/**
+ * In-flight operation lock to prevent race conditions.
+ * Simple mutex for sequential write operations.
+ */
+let feedbackWriteLock: Promise<void> = Promise.resolve();
+
+/**
+ * Execute a feedback write operation with mutex lock.
+ * Ensures operations complete in order, preventing race conditions.
+ */
+async function withFeedbackLock<T>(operation: () => Promise<T>): Promise<T> {
+  // Chain this operation after the current lock releases
+  const currentLock = feedbackWriteLock;
+  let resolve: () => void;
+  feedbackWriteLock = new Promise((r) => {
+    resolve = r;
+  });
+
+  try {
+    await currentLock; // Wait for previous operation
+    return await operation();
+  } finally {
+    resolve!(); // Release lock for next operation
+  }
+}
+
+/**
+ * Load all feedback from storage with data sanitization.
+ * Handles corrupted or legacy data gracefully.
+ */
 export async function getFeedback(): Promise<Feedback[]> {
   try {
     const data = await AsyncStorage.getItem(FEEDBACK_KEY);
-    return data ? JSON.parse(data) : [];
+    if (!data) return [];
+
+    const parsed = JSON.parse(data);
+    if (!Array.isArray(parsed)) return [];
+
+    // Sanitize each item, filter out corrupted entries
+    const sanitized = parsed
+      .map((item) => sanitizeFeedback(item))
+      .filter((item): item is Feedback => item !== null);
+
+    return sanitized;
   } catch (error) {
     console.error("Failed to load feedback:", error);
     return [];
   }
 }
 
-export async function saveFeedback(feedback: Feedback[]): Promise<void> {
+/**
+ * Save feedback array to storage.
+ * Internal use only - external code should use addFeedback/toggleFeedbackUpvote.
+ */
+async function saveFeedback(feedback: Feedback[]): Promise<void> {
   try {
     await AsyncStorage.setItem(FEEDBACK_KEY, JSON.stringify(feedback));
   } catch (error) {
     console.error("Failed to save feedback:", error);
+    throw error; // Propagate to caller for error handling
   }
 }
 
+/**
+ * Add new feedback from the current user.
+ * Atomic operation with mutex lock.
+ *
+ * @param content - The feedback text
+ * @returns The created feedback item
+ */
 export async function addFeedback(content: string): Promise<Feedback> {
+  const userId = getUserId();
+
   const newFeedback: Feedback = {
-    id: Date.now().toString(),
+    id: Crypto.randomUUID(),
     content,
     createdAt: Date.now(),
-    upvotes: 0,
+    authorId: userId,
+    upvotedBy: [], // Start with no upvotes
   };
 
-  const existing = await getFeedback();
-  await saveFeedback([newFeedback, ...existing]);
+  await withFeedbackLock(async () => {
+    const existing = await getFeedback();
+    await saveFeedback([newFeedback, ...existing]);
+  });
+
   return newFeedback;
 }
 
+/**
+ * Toggle upvote for a feedback item.
+ * Uses pure toggle function for deterministic behavior.
+ * Atomic operation with mutex lock.
+ *
+ * @param feedbackId - The feedback to toggle upvote on
+ * @returns The updated feedback item, or null if not found
+ */
+export async function toggleFeedbackUpvote(
+  feedbackId: string,
+): Promise<Feedback | null> {
+  const userId = getUserId();
+
+  return withFeedbackLock(async () => {
+    const feedbacks = await getFeedback();
+    const index = feedbacks.findIndex((f) => f.id === feedbackId);
+
+    if (index === -1) {
+      console.warn(`Feedback ${feedbackId} not found for upvote toggle`);
+      return null;
+    }
+
+    // Use pure toggle function
+    const updatedFeedback = toggleUpvotePure(feedbacks[index], userId);
+
+    // Update in place
+    const updated = [...feedbacks];
+    updated[index] = updatedFeedback;
+
+    await saveFeedback(updated);
+    return updatedFeedback;
+  });
+}
+
+/**
+ * @deprecated Use toggleFeedbackUpvote instead.
+ * Kept for backwards compatibility during migration.
+ */
 export async function upvoteFeedback(id: string): Promise<void> {
-  const feedbacks = await getFeedback();
-  const updated = feedbacks.map((f) =>
-    f.id === id ? { ...f, upvotes: f.upvotes + 1 } : f,
-  );
-  await saveFeedback(updated);
+  await toggleFeedbackUpvote(id);
 }

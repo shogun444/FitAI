@@ -1,10 +1,11 @@
 import { Card } from "@/components/ui/Card";
-import { Feedback } from "@/types";
+import { Feedback, getUpvoteCount, hasUserUpvoted } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, Text, View } from "react-native";
 
 interface FeedbackItemProps {
   feedback: Feedback;
+  currentUserId: string;
   onUpvote: (id: string) => void;
 }
 
@@ -27,7 +28,23 @@ function formatDate(timestamp: number): string {
   return date.toLocaleDateString();
 }
 
-export function FeedbackItem({ feedback, onUpvote }: FeedbackItemProps) {
+/**
+ * FeedbackItem displays a single feedback entry with upvote toggle.
+ *
+ * UI Contract:
+ * - isUpvoted: derived from feedback.upvotedBy.includes(currentUserId)
+ * - upvoteCount: derived from feedback.upvotedBy.length
+ * - Visual feedback: filled icon when upvoted, outline when not
+ */
+export function FeedbackItem({
+  feedback,
+  currentUserId,
+  onUpvote,
+}: FeedbackItemProps) {
+  // Derive state from source of truth (upvotedBy array)
+  const isUpvoted = hasUserUpvoted(feedback, currentUserId);
+  const upvoteCount = getUpvoteCount(feedback);
+
   return (
     <Card className="mb-3">
       <Text className="font-secondary text-gray-900 dark:text-white text-base leading-relaxed mb-4">
@@ -39,11 +56,25 @@ export function FeedbackItem({ feedback, onUpvote }: FeedbackItemProps) {
         </Text>
         <Pressable
           onPress={() => onUpvote(feedback.id)}
-          className="flex-row items-center bg-gray-100 dark:bg-gray-800 rounded-full px-3 py-2 active:bg-gray-200 dark:active:bg-gray-700"
+          className={`flex-row items-center rounded-full px-3 py-2 ${
+            isUpvoted
+              ? "bg-primary/20 dark:bg-primary/30"
+              : "bg-gray-100 dark:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700"
+          }`}
+          accessibilityLabel={isUpvoted ? "Remove upvote" : "Upvote"}
+          accessibilityRole="button"
         >
-          <Ionicons name="arrow-up" size={14} color="#c9f158" />
-          <Text className="font-secondaryMedium text-primary text-sm ml-1.5">
-            {feedback.upvotes}
+          <Ionicons
+            name={isUpvoted ? "arrow-up" : "arrow-up-outline"}
+            size={14}
+            color="#c9f158"
+          />
+          <Text
+            className={`font-secondaryMedium text-sm ml-1.5 ${
+              isUpvoted ? "text-primary" : "text-gray-500 dark:text-gray-400"
+            }`}
+          >
+            {upvoteCount}
           </Text>
         </Pressable>
       </View>

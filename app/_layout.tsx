@@ -20,11 +20,12 @@ import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import "react-native-reanimated";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { seedExercises } from "@/lib/storage";
+import { initializeUserId } from "@/lib/user";
 
 // Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
@@ -35,6 +36,7 @@ export const unstable_settings = {
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  const [isAppReady, setIsAppReady] = useState(false);
 
   const [fontsLoaded, fontError] = useFonts({
     "Manrope-Regular": Manrope_400Regular,
@@ -46,19 +48,35 @@ export default function RootLayout() {
     "Inter-SemiBold": Inter_600SemiBold,
   });
 
-  // Seed exercise catalog on app start
+  // Initialize app data on startup
   useEffect(() => {
-    seedExercises();
+    async function initializeApp() {
+      try {
+        // Initialize userId first (required for feedback system)
+        await initializeUserId();
+        // Seed exercise catalog
+        await seedExercises();
+      } catch (error) {
+        console.error("App initialization error:", error);
+      } finally {
+        setIsAppReady(true);
+      }
+    }
+    initializeApp();
   }, []);
 
   useEffect(() => {
-    if (fontsLoaded || fontError) {
+    if ((fontsLoaded || fontError) && isAppReady) {
       SplashScreen.hideAsync();
     }
-  }, [fontsLoaded, fontError]);
+  }, [fontsLoaded, fontError, isAppReady]);
 
-  // Prevent rendering until fonts are loaded
+  // Prevent rendering until fonts and app data are ready
   if (!fontsLoaded && !fontError) {
+    return null;
+  }
+
+  if (!isAppReady) {
     return null;
   }
 
