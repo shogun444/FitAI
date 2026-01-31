@@ -11,6 +11,10 @@ export interface ProgramSetRowProps {
   repsCompleted: number | null;
   isActive: boolean;
   onRepsChange: (reps: number) => void;
+  /** Previous session reps for this set (null if first session or set didn't exist) */
+  previousReps?: number | null;
+  /** Previous session weight (null if first session) */
+  previousWeight?: number | null;
   /** Ref to the next set's input (for auto-advance) */
   nextInputRef?: React.RefObject<AutoAdvanceNumberInputRef | null>;
   /** If true, this is the last set (dismisses keyboard instead of advancing) */
@@ -37,6 +41,8 @@ export const ProgramSetRow = memo(
         repsCompleted,
         isActive,
         onRepsChange,
+        previousReps,
+        previousWeight,
         nextInputRef,
         isLastSet = false,
       },
@@ -46,6 +52,14 @@ export const ProgramSetRow = memo(
       const isCompleted = repsCompleted !== null && repsCompleted > 0;
       const hitTarget =
         repsCompleted !== null && repsCompleted >= prescribedReps;
+
+      // Check if we have valid previous set data
+      const hasPreviousData =
+        previousReps !== null &&
+        previousReps !== undefined &&
+        previousReps > 0 &&
+        previousWeight !== null &&
+        previousWeight !== undefined;
 
       // Determine row styling based on state
       const getRowStyle = () => {
@@ -78,7 +92,7 @@ export const ProgramSetRow = memo(
           className={`flex-row items-center justify-between px-4 py-3 rounded-xl border ${getRowStyle()}`}
         >
           {/* Set number badge */}
-          <View className="flex-row items-center">
+          <View className="flex-row items-center flex-1">
             <View
               className={`w-8 h-8 rounded-full items-center justify-center mr-3 ${
                 isCompleted
@@ -103,10 +117,17 @@ export const ProgramSetRow = memo(
               </Text>
             </View>
 
-            {/* Target reps */}
-            <Text className="font-secondary text-gray-500 dark:text-gray-400 text-sm">
-              Target: {prescribedReps} reps
-            </Text>
+            {/* Target and previous performance */}
+            <View className="flex-1">
+              <Text className="font-secondary text-gray-500 dark:text-gray-400 text-sm">
+                Target: {prescribedReps} reps
+              </Text>
+              {hasPreviousData && (
+                <Text className="font-secondary text-gray-400 dark:text-gray-500 text-xs mt-0.5">
+                  Prev: {previousWeight} kg × {previousReps}
+                </Text>
+              )}
+            </View>
           </View>
 
           {/* Reps input with auto-advance */}

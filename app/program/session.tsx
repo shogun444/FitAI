@@ -13,7 +13,12 @@ import {
 import { useGlobalRestTimer } from "@/contexts/RestTimerContext";
 import { useProgramInstance } from "@/hooks/useProgramInstance";
 import { classifyPerformance } from "@/lib/programRules";
-import { PrescribedLift, PROGRAM_LIFTS, ProgramLiftId } from "@/types";
+import {
+  LiftPerformance,
+  PrescribedLift,
+  PROGRAM_LIFTS,
+  ProgramLiftId,
+} from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { createRef, memo, useCallback, useMemo, useState } from "react";
@@ -59,6 +64,8 @@ interface LiftCardProps {
   onRepsChange: (setIndex: number, reps: number) => void;
   /** Previous session weight for progress display (null if first session) */
   previousWeight: number | null;
+  /** Last session performance data for context (null if first session) */
+  lastPerformance: LiftPerformance | null;
   /** Ref to the first input of the next lift card (for cross-lift auto-advance) */
   nextLiftFirstInputRef?: React.RefObject<AutoAdvanceNumberInputRef>;
 }
@@ -70,6 +77,7 @@ const LiftCard = memo(function LiftCard({
   isCurrentLift,
   onRepsChange,
   previousWeight,
+  lastPerformance,
   nextLiftFirstInputRef,
 }: LiftCardProps) {
   // Create refs for each set input within this lift
@@ -138,6 +146,10 @@ const LiftCard = memo(function LiftCard({
           const reps = repsPerSet[setIndex];
           const isLastSetInLift = setIndex === lift.sets - 1;
 
+          // Get previous session data for this specific set
+          const previousReps = lastPerformance?.repsPerSet[setIndex] ?? null;
+          const prevWeight = lastPerformance?.weight ?? null;
+
           // Determine next input ref:
           // - If not last set in lift: next set in same lift
           // - If last set in lift: first set of next lift (if exists)
@@ -156,6 +168,8 @@ const LiftCard = memo(function LiftCard({
               repsCompleted={reps}
               isActive={isActive}
               onRepsChange={(newReps) => onRepsChange(setIndex, newReps)}
+              previousReps={previousReps}
+              previousWeight={prevWeight}
               nextInputRef={nextRef}
               isLastSet={isLastSet}
             />
@@ -381,9 +395,10 @@ export default function ProgramSessionScreen() {
           // This is handled internally by LiftCard - we just need to chain them
           const isLastLift = liftIndex === session.lifts.length - 1;
 
-          // Get previous session weight for progress display
+          // Get previous session data for progress display
           const liftState = program.lifts.find((l) => l.liftId === lift.liftId);
           const previousWeight = liftState?.lastPerformance?.weight ?? null;
+          const lastPerformance = liftState?.lastPerformance ?? null;
 
           return (
             <LiftCard
@@ -400,6 +415,7 @@ export default function ProgramSessionScreen() {
                 handleRepsChange(lift.liftId, setIndex, reps)
               }
               previousWeight={previousWeight}
+              lastPerformance={lastPerformance}
               // Last lift has no next lift to advance to
               nextLiftFirstInputRef={isLastLift ? undefined : undefined}
             />
