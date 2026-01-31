@@ -1,5 +1,8 @@
 import { Button, Card, Heading, Subheading } from "@/components";
+import { ActiveProgramCard, ProgramCard } from "@/components/programs";
 import { LastSession } from "@/components/workout";
+import { PROGRAMS } from "@/data/programs";
+import { useProgramInstance } from "@/hooks/useProgramInstance";
 import { useWorkoutStore } from "@/store";
 import { Href, Link, useRouter } from "expo-router";
 import { useEffect, useMemo } from "react";
@@ -9,6 +12,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function HomeScreen() {
   const router = useRouter();
   const { currentWorkout, pastWorkouts, loadWorkouts } = useWorkoutStore();
+  const {
+    program,
+    loading: programLoading,
+    getTodaySession,
+    hasActiveProgram,
+  } = useProgramInstance();
 
   useEffect(() => {
     loadWorkouts();
@@ -18,6 +27,11 @@ export default function HomeScreen() {
     if (pastWorkouts.length === 0) return null;
     return pastWorkouts[0];
   }, [pastWorkouts]);
+
+  const todaySession = useMemo(() => {
+    if (!hasActiveProgram) return null;
+    return getTodaySession();
+  }, [hasActiveProgram, getTodaySession]);
 
   const handleStartWorkout = () => {
     router.push("/workout/select-exercises" as Href);
@@ -36,6 +50,11 @@ export default function HomeScreen() {
         </Subheading>
 
         <View className="gap-4">
+          {/* Active Program Section */}
+          {hasActiveProgram && program && todaySession && (
+            <ActiveProgramCard program={program} todaySession={todaySession} />
+          )}
+
           {currentWorkout ? (
             <Card>
               <Text className="font-primarySemiBold text-lg text-gray-900 dark:text-white mb-2">
@@ -57,6 +76,24 @@ export default function HomeScreen() {
             <Button title="View History" variant="secondary" />
           </Link>
         </View>
+
+        {/* Only show program cards if no active program */}
+        {!hasActiveProgram && (
+          <View className="my-6">
+            <Text className="font-primarySemiBold text-lg text-gray-900 dark:text-white mb-3">
+              Workout Programs
+            </Text>
+            <View className="gap-3">
+              {PROGRAMS.map((program) => (
+                <ProgramCard
+                  key={program.id}
+                  program={program}
+                  onPress={() => router.push(`/program/${program.id}` as Href)}
+                />
+              ))}
+            </View>
+          </View>
+        )}
 
         {pastWorkouts.length > 0 && (
           <View className="mt-10">

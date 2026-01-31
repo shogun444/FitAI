@@ -19,7 +19,7 @@ export function FeedbackInput({ onSubmit }: FeedbackInputProps) {
   const isValid = content.trim().length > 0;
 
   return (
-    <Card className="mb-4">
+    <Card className="mb-4 ">
       <TextInput
         value={content}
         onChangeText={setContent}

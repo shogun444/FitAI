@@ -2,8 +2,11 @@ import { EXERCISE_CATALOG } from "@/data/exercises";
 import {
   ExerciseTemplate,
   Feedback,
+  Reply,
   WorkoutSession,
+  addReplyToFeedback,
   sanitizeFeedback,
+  toggleReplyUpvote as toggleReplyUpvotePure,
   toggleUpvote as toggleUpvotePure,
 } from "@/types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -177,6 +180,7 @@ export async function addFeedback(content: string): Promise<Feedback> {
     createdAt: Date.now(),
     authorId: userId,
     upvotedBy: [], // Start with no upvotes
+    replies: [], // Start with no replies
   };
 
   await withFeedbackLock(async () => {
@@ -227,4 +231,93 @@ export async function toggleFeedbackUpvote(
  */
 export async function upvoteFeedback(id: string): Promise<void> {
   await toggleFeedbackUpvote(id);
+}
+
+// ============================================
+// Reply operations
+// ============================================
+
+/**
+ * Add a reply to a feedback item.
+ * Atomic operation with mutex lock.
+ *
+ * @param feedbackId - The feedback to reply to
+ * @param content - The reply text
+ * @returns The updated feedback item with new reply, or null if feedback not found
+ */
+export async function addReply(
+  feedbackId: string,
+  content: string,
+): Promise<Feedback | null> {
+  const userId = getUserId();
+
+  const newReply: Reply = {
+    id: Crypto.randomUUID(),
+    content,
+    createdAt: Date.now(),
+    authorId: userId,
+    upvotedBy: [],
+  };
+
+  return withFeedbackLock(async () => {
+    const feedbacks = await getFeedback();
+    const index = feedbacks.findIndex((f) => f.id === feedbackId);
+
+    if (index === -1) {
+      console.warn(`Feedback ${feedbackId} not found for reply`);
+      return null;
+    }
+
+    // Use pure function to add reply
+    const updatedFeedback = addReplyToFeedback(feedbacks[index], newReply);
+
+    // Update in place
+    const updated = [...feedbacks];
+    updated[index] = updatedFeedback;
+
+    await saveFeedback(updated);
+    return updatedFeedback;
+  });
+}
+
+/**
+ * Toggle upvote on a reply within a feedback item.
+ * Atomic operation with mutex lock.
+ *
+ * @param feedbackId - The parent feedback
+ * @param replyId - The reply to toggle upvote on
+ * @returns The updated feedback item, or null if not found
+ */
+export async function toggleReplyUpvote(
+  feedbackId: string,
+  replyId: string,
+): Promise<Feedback | null> {
+  const userId = getUserId();
+
+  return withFeedbackLock(async () => {
+    const feedbacks = await getFeedback();
+    const index = feedbacks.findIndex((f) => f.id === feedbackId);
+
+    if (index === -1) {
+      console.warn(`Feedback ${feedbackId} not found for reply upvote`);
+      return null;
+    }
+
+    // Verify reply exists
+    const feedback = feedbacks[index];
+    if (!feedback.replies.some((r) => r.id === replyId)) {
+      console.warn(`Reply ${replyId} not found in feedback ${feedbackId}`);
+      return null;
+    }
+
+    // Use pure function to toggle reply upvote
+    const updatedFeedback = toggleReplyUpvotePure(feedback, replyId, userId);
+
+    // Update in place
+    const updated = [...feedbacks];
+    updated[index] = updatedFeedback;
+
+    await saveFeedback(updated);
+    return updatedFeedback;
+  });
 }

@@ -1,12 +1,18 @@
 import { Card } from "@/components/ui/Card";
 import { Feedback, getUpvoteCount, hasUserUpvoted } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
+import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
+import { FeedbackReplies } from "./FeedbackReplies";
+import { ReplyInput } from "./ReplyInput";
+import { UpvoteButton } from "./UpvoteButton";
 
 interface FeedbackItemProps {
   feedback: Feedback;
   currentUserId: string;
   onUpvote: (id: string) => void;
+  onReply: (feedbackId: string, content: string) => void;
+  onReplyUpvote: (feedbackId: string, replyId: string) => void;
 }
 
 function formatDate(timestamp: number): string {
@@ -29,24 +35,39 @@ function formatDate(timestamp: number): string {
 }
 
 /**
- * FeedbackItem displays a single feedback entry with upvote toggle.
+ * FeedbackItem displays a single feedback entry with upvote toggle and replies.
  *
  * UI Contract:
  * - isUpvoted: derived from feedback.upvotedBy.includes(currentUserId)
  * - upvoteCount: derived from feedback.upvotedBy.length
  * - Visual feedback: filled icon when upvoted, outline when not
+ * - Reply button: ONLY on feedback items (not on replies)
+ * - Reply input: hidden by default, shown when user taps Reply
  */
 export function FeedbackItem({
   feedback,
   currentUserId,
   onUpvote,
+  onReply,
+  onReplyUpvote,
 }: FeedbackItemProps) {
+  const [showReplyInput, setShowReplyInput] = useState(false);
+
   // Derive state from source of truth (upvotedBy array)
   const isUpvoted = hasUserUpvoted(feedback, currentUserId);
   const upvoteCount = getUpvoteCount(feedback);
 
+  const handleReplySubmit = (content: string) => {
+    onReply(feedback.id, content);
+    setShowReplyInput(false);
+  };
+
+  const handleReplyUpvote = (replyId: string) => {
+    onReplyUpvote(feedback.id, replyId);
+  };
+
   return (
-    <Card className="mb-3">
+    <Card className="mb-3 ">
       <Text className="font-secondary text-gray-900 dark:text-white text-base leading-relaxed mb-4">
         {feedback.content}
       </Text>
@@ -54,30 +75,43 @@ export function FeedbackItem({
         <Text className="font-secondary text-gray-400 text-xs">
           {formatDate(feedback.createdAt)}
         </Text>
-        <Pressable
-          onPress={() => onUpvote(feedback.id)}
-          className={`flex-row items-center rounded-full px-3 py-2 ${
-            isUpvoted
-              ? "bg-primary/20 dark:bg-primary/30"
-              : "bg-gray-100 dark:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700"
-          }`}
-          accessibilityLabel={isUpvoted ? "Remove upvote" : "Upvote"}
-          accessibilityRole="button"
-        >
-          <Ionicons
-            name={isUpvoted ? "arrow-up" : "arrow-up-outline"}
-            size={14}
-            color="#c9f158"
-          />
-          <Text
-            className={`font-secondaryMedium text-sm ml-1.5 ${
-              isUpvoted ? "text-primary" : "text-gray-500 dark:text-gray-400"
-            }`}
+        <View className="flex-row items-center gap-2">
+          {/* Reply button - ONLY on feedback, not on replies */}
+          <Pressable
+            onPress={() => setShowReplyInput(!showReplyInput)}
+            className="flex-row items-center rounded-full px-3 py-2 bg-gray-100 dark:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700"
+            accessibilityLabel="Reply"
+            accessibilityRole="button"
           >
-            {upvoteCount}
-          </Text>
-        </Pressable>
+            <Ionicons name="chatbubble-outline" size={14} color="#9ca3af" />
+            {feedback.replies.length > 0 && (
+              <Text className="font-secondaryMedium text-sm ml-1.5 text-gray-500 dark:text-gray-400">
+                {feedback.replies.length}
+              </Text>
+            )}
+          </Pressable>
+          <UpvoteButton
+            isUpvoted={isUpvoted}
+            count={upvoteCount}
+            onPress={() => onUpvote(feedback.id)}
+          />
+        </View>
       </View>
+
+      {/* Reply input - hidden by default */}
+      {showReplyInput && (
+        <ReplyInput
+          onSubmit={handleReplySubmit}
+          onCancel={() => setShowReplyInput(false)}
+        />
+      )}
+
+      {/* Replies section */}
+      <FeedbackReplies
+        replies={feedback.replies}
+        currentUserId={currentUserId}
+        onReplyUpvote={handleReplyUpvote}
+      />
     </Card>
   );
 }

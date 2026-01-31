@@ -55,6 +55,12 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="nutrition"
+        options={{
+          href: null, // Hidden from tab bar
+        }}
+      />
+      <Tabs.Screen
         name="feedback"
         options={{
           title: "Feedback",

@@ -4,14 +4,24 @@ import {
   FeedbackItem,
 } from "@/components/feedback";
 import { EmptyState, Heading } from "@/components/ui";
-import { addFeedback, getFeedback, toggleFeedbackUpvote } from "@/lib/storage";
+import {
+  addFeedback,
+  addReply,
+  getFeedback,
+  toggleFeedbackUpvote,
+  toggleReplyUpvote,
+} from "@/lib/storage";
 import { getUserId, isUserIdInitialized } from "@/lib/user";
 import {
+  addReplyToFeedback,
   Feedback,
   FeedbackSortMode,
   getUpvoteCount,
+  Reply,
+  toggleReplyUpvote as toggleReplyUpvotePure,
   toggleUpvote,
 } from "@/types";
+import * as Crypto from "expo-crypto";
 import { useCallback, useEffect, useState } from "react";
 import { FlatList, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -44,28 +54,74 @@ export default function FeedbackScreen() {
 
   /**
    * Handle upvote toggle with optimistic UI.
-   *
-   * Strategy:
-   * 1. Optimistically update UI immediately (fast UX)
-   * 2. Persist to storage in background
-   * 3. On error, revert to previous state
-   *
-   * Handles rapid tapping: each tap creates consistent toggle
    */
   const handleUpvote = async (id: string) => {
     if (!currentUserId) return;
 
-    // Optimistic update: apply toggle immediately to UI
+    // Optimistic update
     setFeedbacks((prev) =>
       prev.map((f) => (f.id === id ? toggleUpvote(f, currentUserId) : f)),
     );
 
-    // Persist to storage (mutex-locked for consistency)
     try {
       await toggleFeedbackUpvote(id);
     } catch (error) {
-      // Revert on failure by reloading from storage
       console.error("Failed to persist upvote:", error);
+      const data = await getFeedback();
+      setFeedbacks(data);
+    }
+  };
+
+  /**
+   * Handle adding a reply with optimistic UI.
+   */
+  const handleReply = async (feedbackId: string, content: string) => {
+    if (!currentUserId) return;
+
+    // Create optimistic reply
+    const optimisticReply: Reply = {
+      id: Crypto.randomUUID(),
+      content,
+      createdAt: Date.now(),
+      authorId: currentUserId,
+      upvotedBy: [],
+    };
+
+    // Optimistic update
+    setFeedbacks((prev) =>
+      prev.map((f) =>
+        f.id === feedbackId ? addReplyToFeedback(f, optimisticReply) : f,
+      ),
+    );
+
+    try {
+      await addReply(feedbackId, content);
+    } catch (error) {
+      console.error("Failed to persist reply:", error);
+      const data = await getFeedback();
+      setFeedbacks(data);
+    }
+  };
+
+  /**
+   * Handle reply upvote toggle with optimistic UI.
+   */
+  const handleReplyUpvote = async (feedbackId: string, replyId: string) => {
+    if (!currentUserId) return;
+
+    // Optimistic update
+    setFeedbacks((prev) =>
+      prev.map((f) =>
+        f.id === feedbackId
+          ? toggleReplyUpvotePure(f, replyId, currentUserId)
+          : f,
+      ),
+    );
+
+    try {
+      await toggleReplyUpvote(feedbackId, replyId);
+    } catch (error) {
+      console.error("Failed to persist reply upvote:", error);
       const data = await getFeedback();
       setFeedbacks(data);
     }
@@ -79,10 +135,7 @@ export default function FeedbackScreen() {
       case "oldest":
         return sorted.sort((a, b) => a.createdAt - b.createdAt);
       case "upvotes":
-        // Sort by upvotedBy.length (derived count)
-        return sorted.sort(
-          (a, b) => getUpvoteCount(b) - getUpvoteCount(a),
-        );
+        return sorted.sort((a, b) => getUpvoteCount(b) - getUpvoteCount(a));
       default:
         return sorted;
     }
@@ -116,6 +169,8 @@ export default function FeedbackScreen() {
             feedback={item}
             currentUserId={currentUserId}
             onUpvote={handleUpvote}
+            onReply={handleReply}
+            onReplyUpvote={handleReplyUpvote}
           />
         )}
         ListEmptyComponent={
