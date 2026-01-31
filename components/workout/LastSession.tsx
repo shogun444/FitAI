@@ -67,14 +67,14 @@ export function LastSession({ workout }: LastSessionProps) {
   }
 
   return (
-    <Card className="mt-4">
+    <Card className="mt-4 ">
       <Pressable
         onPress={() => setIsExpanded((prev) => !prev)}
         className="flex-row justify-between items-center"
       >
         <View>
           <Text className="font-primarySemiBold text-base text-gray-900 dark:text-white">
-            Last Session
+            Last Session 
           </Text>
           <Text className="font-secondary text-xs text-gray-500 mt-0.5">
             {formatDate(workout.startedAt)} · {formatDuration(workout.duration)}
@@ -86,7 +86,7 @@ export function LastSession({ workout }: LastSessionProps) {
       </Pressable>
 
       {isExpanded && (
-        <View className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+        <View className="mt-4 py-4 border-t border-gray-100 dark:border-gray-800">
           {exercisesWithSets.map((exercise) => (
             <LastSessionExercise key={exercise.id} exercise={exercise} />
           ))}

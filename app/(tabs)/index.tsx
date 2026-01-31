@@ -96,7 +96,7 @@ export default function HomeScreen() {
         )}
 
         {pastWorkouts.length > 0 && (
-          <View className="mt-10">
+          <View className="my-10">
             <Text className="font-primarySemiBold text-lg text-gray-900 dark:text-white mb-1">
               Recent Workouts
             </Text>
@@ -105,7 +105,7 @@ export default function HomeScreen() {
               {pastWorkouts.length !== 1 ? "s" : ""} completed
             </Text>
 
-            {lastSession && <LastSession workout={lastSession} />}
+            {lastSession && <LastSession  workout={lastSession} />}
           </View>
         )}
       </ScrollView>
