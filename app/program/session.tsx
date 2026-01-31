@@ -1,4 +1,8 @@
-import { InlineRestTimer, ProgramSetRow } from "@/components/programs";
+import {
+  InlineRestTimer,
+  ProgramSetRow,
+  ProgressDelta,
+} from "@/components/programs";
 import {
   AutoAdvanceNumberInputRef,
   Button,
@@ -53,6 +57,8 @@ interface LiftCardProps {
   currentSetIndex: number;
   isCurrentLift: boolean;
   onRepsChange: (setIndex: number, reps: number) => void;
+  /** Previous session weight for progress display (null if first session) */
+  previousWeight: number | null;
   /** Ref to the first input of the next lift card (for cross-lift auto-advance) */
   nextLiftFirstInputRef?: React.RefObject<AutoAdvanceNumberInputRef>;
 }
@@ -63,6 +69,7 @@ const LiftCard = memo(function LiftCard({
   currentSetIndex,
   isCurrentLift,
   onRepsChange,
+  previousWeight,
   nextLiftFirstInputRef,
 }: LiftCardProps) {
   // Create refs for each set input within this lift
@@ -115,6 +122,14 @@ const LiftCard = memo(function LiftCard({
           </View>
         )}
       </View>
+
+      {/* Progress since last session */}
+      <ProgressDelta
+        previousWeight={previousWeight}
+        currentWeight={lift.weight}
+        variant="inline"
+        className="mb-3"
+      />
 
       {/* Sets with auto-advance refs */}
       <View className="gap-2">
@@ -366,6 +381,10 @@ export default function ProgramSessionScreen() {
           // This is handled internally by LiftCard - we just need to chain them
           const isLastLift = liftIndex === session.lifts.length - 1;
 
+          // Get previous session weight for progress display
+          const liftState = program.lifts.find((l) => l.liftId === lift.liftId);
+          const previousWeight = liftState?.lastPerformance?.weight ?? null;
+
           return (
             <LiftCard
               key={lift.liftId}
@@ -380,6 +399,7 @@ export default function ProgramSessionScreen() {
               onRepsChange={(setIndex, reps) =>
                 handleRepsChange(lift.liftId, setIndex, reps)
               }
+              previousWeight={previousWeight}
               // Last lift has no next lift to advance to
               nextLiftFirstInputRef={isLastLift ? undefined : undefined}
             />

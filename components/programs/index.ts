@@ -8,6 +8,7 @@ export { ProgramCard } from "./ProgramCard";
 export { ProgramHeader } from "./ProgramHeader";
 export { ProgramRestTimer, RestTimerIndicator } from "./ProgramRestTimer";
 export { ProgramSetRow } from "./ProgramSetRow";
+export { ProgressDelta } from "./ProgressDelta";
 export { ProgressionBadge } from "./ProgressionBadge";
 export { SessionSummaryCard } from "./SessionSummaryCard";
 export { WeightChangeRow } from "./WeightChangeRow";
