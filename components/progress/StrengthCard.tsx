@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui/Card";
 import { ExercisePR, StrengthMetrics } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
+import React, { memo } from "react";
 import { Text, View } from "react-native";
 
 // ============================================
@@ -22,7 +23,9 @@ function formatSet(weight: number, reps: number): string {
   return `${weight} kg × ${reps} reps`;
 }
 
-function ExercisePRItem({ pr }: ExercisePRItemProps) {
+const ExercisePRItem = memo(function ExercisePRItem({
+  pr,
+}: ExercisePRItemProps) {
   return (
     <View className="py-3 border-b border-gray-100 dark:border-gray-800 last:border-b-0">
       <Text className="font-primaryMedium text-base text-gray-900 dark:text-white mb-1.5">
@@ -49,7 +52,7 @@ function ExercisePRItem({ pr }: ExercisePRItemProps) {
       )}
     </View>
   );
-}
+});
 
 // ============================================
 // StrengthCard Component
@@ -59,7 +62,9 @@ interface StrengthCardProps {
   metrics: StrengthMetrics;
 }
 
-export function StrengthCard({ metrics }: StrengthCardProps) {
+export const StrengthCard = memo(function StrengthCard({
+  metrics,
+}: StrengthCardProps) {
   if (metrics.exercisePRs.length === 0) {
     return (
       <Card className="mb-4">
@@ -94,4 +99,4 @@ export function StrengthCard({ metrics }: StrengthCardProps) {
       </View>
     </Card>
   );
-}
+});

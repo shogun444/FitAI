@@ -12,9 +12,27 @@ import { classifyPerformance } from "@/lib/programRules";
 import { PrescribedLift, PROGRAM_LIFTS, ProgramLiftId } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { createRef, useCallback, useMemo, useState } from "react";
+import React, { createRef, memo, useCallback, useMemo, useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+// ============================================
+// Constants (moved outside component to prevent recreation)
+// ============================================
+
+const TIER_COLORS = {
+  A: "bg-green-500",
+  B: "bg-blue-500",
+  C: "bg-yellow-500",
+  D: "bg-red-500",
+} as const;
+
+const TIER_LABELS = {
+  A: "Excellent",
+  B: "Solid",
+  C: "Partial",
+  D: "Building",
+} as const;
 
 // ============================================
 // Types
@@ -26,7 +44,7 @@ interface LiftProgress {
 }
 
 // ============================================
-// Lift Card Component
+// Lift Card Component (Memoized)
 // ============================================
 
 interface LiftCardProps {
@@ -39,7 +57,7 @@ interface LiftCardProps {
   nextLiftFirstInputRef?: React.RefObject<AutoAdvanceNumberInputRef>;
 }
 
-function LiftCard({
+const LiftCard = memo(function LiftCard({
   lift,
   repsPerSet,
   currentSetIndex,
@@ -62,20 +80,6 @@ function LiftCard({
     (r) => r !== null && r >= lift.reps,
   ).length;
   const tier = classifyPerformance(completedSets, false);
-
-  const tierColors = {
-    A: "bg-green-500",
-    B: "bg-blue-500",
-    C: "bg-yellow-500",
-    D: "bg-red-500",
-  };
-
-  const tierLabels = {
-    A: "Excellent",
-    B: "Solid",
-    C: "Partial",
-    D: "Building",
-  };
 
   // Check if all sets for this lift are completed
   const allSetsCompleted = repsPerSet.every((r) => r !== null && r > 0);
@@ -104,9 +108,9 @@ function LiftCard({
 
         {/* Tier badge */}
         {allSetsCompleted && (
-          <View className={`px-3 py-1.5 rounded-full ${tierColors[tier]}`}>
+          <View className={`px-3 py-1.5 rounded-full ${TIER_COLORS[tier]}`}>
             <Text className="font-secondaryMedium text-white text-xs">
-              {tierLabels[tier]}
+              {TIER_LABELS[tier]}
             </Text>
           </View>
         )}
@@ -130,7 +134,7 @@ function LiftCard({
 
           return (
             <ProgramSetRow
-              key={setIndex}
+              key={`set-${setIndex}`}
               ref={setRefs[setIndex]}
               setNumber={setIndex + 1}
               prescribedReps={lift.reps}
@@ -155,7 +159,7 @@ function LiftCard({
       </View>
     </Card>
   );
-}
+});
 
 // ============================================
 // Main Session Screen
@@ -329,24 +333,14 @@ export default function ProgramSessionScreen() {
         />
       </View>
 
-      {/* Main content */}
-      <ScrollView
-        className="flex-1 px-4 py-4"
-        contentContainerStyle={{ paddingBottom: 100 }}
-      >
-        <Heading className="mb-1">Today's Workout</Heading>
-        <Subheading className="mb-4">
-          Enter reps for each set. Tap Rest when ready.
-        </Subheading>
-
-        {/* Inline Rest Timer - shown when timer is active */}
+      {/* Fixed Rest Timer - stays visible when scrolling */}
+      <View className="z-10 px-4 pt-4">
         {isTimerActive ? (
           <InlineRestTimer timer={timer} onExpand={openRestTimer} />
         ) : (
-          /* Start Rest button - shown when timer is not active */
           <TouchableOpacity
             onPress={handleStartRest}
-            className="flex-row items-center justify-center bg-primary-100 dark:bg-primary-900/30 border border-primary-200 dark:border-primary-800 rounded-xl px-4 py-3 mb-4"
+            className="flex-row items-center justify-center bg-primary-100 dark:bg-primary-900/30 border border-primary-200 dark:border-primary-800 rounded-xl px-4 py-3 mb-2"
           >
             <Ionicons name="timer-outline" size={20} color="#7c3aed" />
             <Text className="font-secondaryMedium text-primary-600 dark:text-primary-400 text-base ml-2">
@@ -354,6 +348,17 @@ export default function ProgramSessionScreen() {
             </Text>
           </TouchableOpacity>
         )}
+      </View>
+
+      {/* Main content */}
+      <ScrollView
+        className="flex-1 px-4"
+        contentContainerStyle={{ paddingBottom: 100 }}
+      >
+        <Heading className="mb-1">Today's Workout</Heading>
+        <Subheading className="mb-4">
+          Enter reps for each set. Tap Rest when ready.
+        </Subheading>
 
         {/* Lift cards with cross-lift auto-advance refs */}
         {session.lifts.map((lift, liftIndex) => {

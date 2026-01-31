@@ -1,15 +1,21 @@
 import { useWorkoutStore } from "@/store";
-import { useState } from "react";
+import React, { memo, useCallback, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 
 interface LastSessionSummaryProps {
   exerciseName: string;
 }
 
-export function LastSessionSummary({ exerciseName }: LastSessionSummaryProps) {
+export const LastSessionSummary = memo(function LastSessionSummary({
+  exerciseName,
+}: LastSessionSummaryProps) {
   const { getLastSessionForExercise } = useWorkoutStore();
   const [isExpanded, setIsExpanded] = useState(true);
   const lastSession = getLastSessionForExercise(exerciseName);
+
+  const toggleExpanded = useCallback(() => {
+    setIsExpanded((prev) => !prev);
+  }, []);
 
   if (!lastSession) {
     return null;
@@ -23,7 +29,7 @@ export function LastSessionSummary({ exerciseName }: LastSessionSummaryProps) {
 
   return (
     <Pressable
-      onPress={() => setIsExpanded(!isExpanded)}
+      onPress={toggleExpanded}
       className="mb-3 border-t border-gray-200 dark:border-gray-700 pt-3"
     >
       <View className="flex-row items-center justify-between mb-2">
@@ -51,4 +57,4 @@ export function LastSessionSummary({ exerciseName }: LastSessionSummaryProps) {
       )}
     </Pressable>
   );
-}
+});

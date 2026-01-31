@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/Card";
 import { Feedback, getUpvoteCount, hasUserUpvoted } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
+import React, { memo, useCallback, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { FeedbackReplies } from "./FeedbackReplies";
 import { ReplyInput } from "./ReplyInput";
@@ -44,7 +44,7 @@ function formatDate(timestamp: number): string {
  * - Reply button: ONLY on feedback items (not on replies)
  * - Reply input: hidden by default, shown when user taps Reply
  */
-export function FeedbackItem({
+export const FeedbackItem = memo(function FeedbackItem({
   feedback,
   currentUserId,
   onUpvote,
@@ -57,14 +57,32 @@ export function FeedbackItem({
   const isUpvoted = hasUserUpvoted(feedback, currentUserId);
   const upvoteCount = getUpvoteCount(feedback);
 
-  const handleReplySubmit = (content: string) => {
-    onReply(feedback.id, content);
-    setShowReplyInput(false);
-  };
+  const handleReplySubmit = useCallback(
+    (content: string) => {
+      onReply(feedback.id, content);
+      setShowReplyInput(false);
+    },
+    [feedback.id, onReply],
+  );
 
-  const handleReplyUpvote = (replyId: string) => {
-    onReplyUpvote(feedback.id, replyId);
-  };
+  const handleReplyUpvote = useCallback(
+    (replyId: string) => {
+      onReplyUpvote(feedback.id, replyId);
+    },
+    [feedback.id, onReplyUpvote],
+  );
+
+  const handleUpvote = useCallback(() => {
+    onUpvote(feedback.id);
+  }, [feedback.id, onUpvote]);
+
+  const toggleReplyInput = useCallback(() => {
+    setShowReplyInput((prev) => !prev);
+  }, []);
+
+  const hideReplyInput = useCallback(() => {
+    setShowReplyInput(false);
+  }, []);
 
   return (
     <Card className="mb-3 ">
@@ -78,7 +96,7 @@ export function FeedbackItem({
         <View className="flex-row items-center gap-2">
           {/* Reply button - ONLY on feedback, not on replies */}
           <Pressable
-            onPress={() => setShowReplyInput(!showReplyInput)}
+            onPress={toggleReplyInput}
             className="flex-row items-center rounded-full px-3 py-2 bg-gray-100 dark:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700"
             accessibilityLabel="Reply"
             accessibilityRole="button"
@@ -93,17 +111,14 @@ export function FeedbackItem({
           <UpvoteButton
             isUpvoted={isUpvoted}
             count={upvoteCount}
-            onPress={() => onUpvote(feedback.id)}
+            onPress={handleUpvote}
           />
         </View>
       </View>
 
       {/* Reply input - hidden by default */}
       {showReplyInput && (
-        <ReplyInput
-          onSubmit={handleReplySubmit}
-          onCancel={() => setShowReplyInput(false)}
-        />
+        <ReplyInput onSubmit={handleReplySubmit} onCancel={hideReplyInput} />
       )}
 
       {/* Replies section */}
@@ -114,4 +129,4 @@ export function FeedbackItem({
       />
     </Card>
   );
-}
+});

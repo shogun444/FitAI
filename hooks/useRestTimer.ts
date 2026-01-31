@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 // ============================================
 // Constants
@@ -178,26 +178,46 @@ export function useRestTimer(onComplete?: () => void): UseRestTimerReturn {
   const isAtMaxDuration = duration >= MAX_REST_SECONDS;
   const isComplete = hasStarted && remaining === 0;
 
-  return {
-    // State
-    duration,
-    remaining,
-    isRunning,
-    hasStarted,
-    // Actions
-    start,
-    pause,
-    reset,
-    increaseDuration,
-    decreaseDuration,
-    setDuration,
-    // Computed
-    formattedTime,
-    progress,
-    isAtMinDuration,
-    isAtMaxDuration,
-    isComplete,
-  };
+  // Memoize return value to prevent unnecessary re-renders in consumers
+  return useMemo(
+    () => ({
+      // State
+      duration,
+      remaining,
+      isRunning,
+      hasStarted,
+      // Actions
+      start,
+      pause,
+      reset,
+      increaseDuration,
+      decreaseDuration,
+      setDuration,
+      // Computed
+      formattedTime,
+      progress,
+      isAtMinDuration,
+      isAtMaxDuration,
+      isComplete,
+    }),
+    [
+      duration,
+      remaining,
+      isRunning,
+      hasStarted,
+      start,
+      pause,
+      reset,
+      increaseDuration,
+      decreaseDuration,
+      setDuration,
+      formattedTime,
+      progress,
+      isAtMinDuration,
+      isAtMaxDuration,
+      isComplete,
+    ],
+  );
 }
 
 // Export constants for use in components

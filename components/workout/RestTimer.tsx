@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/Card";
 import { useWorkoutStore } from "@/store";
-import { useCallback, useEffect, useRef, useState } from "react";
+import React, { memo, useCallback, useEffect, useRef, useState } from "react";
 import {
   NativeScrollEvent,
   NativeSyntheticEvent,
@@ -48,7 +48,11 @@ interface TimeWheelProps {
   onValueChange: (value: number) => void;
 }
 
-function TimeWheel({ values, selectedValue, onValueChange }: TimeWheelProps) {
+const TimeWheel = memo(function TimeWheel({
+  values,
+  selectedValue,
+  onValueChange,
+}: TimeWheelProps) {
   const scrollViewRef = useRef<ScrollView>(null);
   const isUserScrolling = useRef(false);
   const isProgrammaticScroll = useRef(false);
@@ -156,7 +160,7 @@ function TimeWheel({ values, selectedValue, onValueChange }: TimeWheelProps) {
       </ScrollView>
     </View>
   );
-}
+});
 
 // ============================================
 // RestTimePicker Component
@@ -168,7 +172,7 @@ interface RestTimePickerProps {
   onTogglePicker?: () => void;
 }
 
-function RestTimePicker({
+const RestTimePicker = memo(function RestTimePicker({
   duration,
   onDurationChange,
   onTogglePicker,
@@ -177,17 +181,25 @@ function RestTimePicker({
   const seconds = duration % 60;
   const roundedSeconds = Math.round(seconds / 5) * 5;
 
-  const handleMinutesChange = (newMinutes: number) => {
-    const effectiveSeconds = newMinutes >= 10 ? 0 : roundedSeconds;
-    const validated = validateRestTime(newMinutes, effectiveSeconds);
-    onDurationChange(validated);
-  };
+  const handleMinutesChange = useCallback(
+    (newMinutes: number) => {
+      const effectiveSeconds =
+        newMinutes >= 10 ? 0 : Math.round((duration % 60) / 5) * 5;
+      const validated = validateRestTime(newMinutes, effectiveSeconds);
+      onDurationChange(validated);
+    },
+    [duration, onDurationChange],
+  );
 
-  const handleSecondsChange = (newSeconds: number) => {
-    if (minutes >= 10) return;
-    const validated = validateRestTime(minutes, newSeconds);
-    onDurationChange(validated);
-  };
+  const handleSecondsChange = useCallback(
+    (newSeconds: number) => {
+      const currentMinutes = Math.floor(duration / 60);
+      if (currentMinutes >= 10) return;
+      const validated = validateRestTime(currentMinutes, newSeconds);
+      onDurationChange(validated);
+    },
+    [duration, onDurationChange],
+  );
 
   return (
     <View className="items-center">
@@ -236,7 +248,7 @@ function RestTimePicker({
       </View>
     </View>
   );
-}
+});
 
 // ============================================
 // Main RestTimer Component

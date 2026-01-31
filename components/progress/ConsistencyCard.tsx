@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui/Card";
 import { ConsistencyMetrics } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
+import React, { memo } from "react";
 import { Text, View } from "react-native";
 
 // ============================================
@@ -13,7 +14,11 @@ interface MetricItemProps {
   icon: keyof typeof Ionicons.glyphMap;
 }
 
-function MetricItem({ label, value, icon }: MetricItemProps) {
+const MetricItem = memo(function MetricItem({
+  label,
+  value,
+  icon,
+}: MetricItemProps) {
   return (
     <View className="w-1/2 mb-4">
       <View className="flex-row items-center mb-1">
@@ -27,7 +32,7 @@ function MetricItem({ label, value, icon }: MetricItemProps) {
       </Text>
     </View>
   );
-}
+});
 
 // ============================================
 // ConsistencyCard Component
@@ -37,7 +42,9 @@ interface ConsistencyCardProps {
   metrics: ConsistencyMetrics;
 }
 
-export function ConsistencyCard({ metrics }: ConsistencyCardProps) {
+export const ConsistencyCard = memo(function ConsistencyCard({
+  metrics,
+}: ConsistencyCardProps) {
   return (
     <Card className="mb-4">
       <Text className="font-primarySemiBold text-lg text-gray-900 dark:text-white mb-4">
@@ -68,4 +75,4 @@ export function ConsistencyCard({ metrics }: ConsistencyCardProps) {
       </View>
     </Card>
   );
-}
+});

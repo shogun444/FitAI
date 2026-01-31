@@ -1,6 +1,6 @@
 import { useWorkoutStore } from "@/store";
 import { WorkoutSet } from "@/types";
-import { useState } from "react";
+import React, { memo, useCallback, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 
 interface SetRowProps {
@@ -10,49 +10,60 @@ interface SetRowProps {
   onFocus?: () => void;
 }
 
-export function SetRow({ exerciseId, set, index, onFocus }: SetRowProps) {
+export const SetRow = memo(function SetRow({
+  exerciseId,
+  set,
+  index,
+  onFocus,
+}: SetRowProps) {
   const { updateSet, toggleSetCompleted, removeSet } = useWorkoutStore();
   const [reps, setReps] = useState(set.reps?.toString() ?? "");
   const [weight, setWeight] = useState(set.weight?.toString() ?? "");
   const [isEditing, setIsEditing] = useState(false);
 
-  const handleRepsChange = (value: string) => {
-    setReps(value);
-    const parsed = value === "" ? null : parseInt(value, 10);
-    if (parsed === null || !isNaN(parsed)) {
-      updateSet(exerciseId, set.id, parsed, set.weight);
-    }
-  };
+  const handleRepsChange = useCallback(
+    (value: string) => {
+      setReps(value);
+      const parsed = value === "" ? null : parseInt(value, 10);
+      if (parsed === null || !isNaN(parsed)) {
+        updateSet(exerciseId, set.id, parsed, set.weight);
+      }
+    },
+    [updateSet, exerciseId, set.id, set.weight],
+  );
 
-  const handleWeightChange = (value: string) => {
-    setWeight(value);
-    const parsed = value === "" ? null : parseFloat(value);
-    if (parsed === null || !isNaN(parsed)) {
-      updateSet(exerciseId, set.id, set.reps, parsed);
-    }
-  };
+  const handleWeightChange = useCallback(
+    (value: string) => {
+      setWeight(value);
+      const parsed = value === "" ? null : parseFloat(value);
+      if (parsed === null || !isNaN(parsed)) {
+        updateSet(exerciseId, set.id, set.reps, parsed);
+      }
+    },
+    [updateSet, exerciseId, set.id, set.reps],
+  );
 
-  const handleComplete = () => {
+  const handleComplete = useCallback(() => {
     if (set.reps !== null && set.weight !== null) {
       toggleSetCompleted(exerciseId, set.id);
     }
-  };
+  }, [toggleSetCompleted, exerciseId, set.id, set.reps, set.weight]);
 
-  const handleFocus = () => {
+  const handleFocus = useCallback(() => {
     if (set.completed) {
       toggleSetCompleted(exerciseId, set.id);
     }
     setIsEditing(true);
     onFocus?.();
-  };
+  }, [set.completed, toggleSetCompleted, exerciseId, set.id, onFocus]);
 
-  const handleBlur = () => {
+  const handleBlur = useCallback(() => {
     setIsEditing(false);
-  };
+  }, []);
 
-  const handleRemove = () => {
+  const handleRemove = useCallback(() => {
     removeSet(exerciseId, set.id);
-  };
+  }, [removeSet, exerciseId, set.id]);
 
   const isReadyToComplete = set.reps !== null && set.weight !== null;
   const showGreenBackground = set.completed && !isEditing;
@@ -119,4 +130,4 @@ export function SetRow({ exerciseId, set, index, onFocus }: SetRowProps) {
       </Pressable>
     </View>
   );
-}
+});

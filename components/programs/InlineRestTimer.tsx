@@ -1,5 +1,6 @@
 import { UseRestTimerReturn } from "@/hooks/useRestTimer";
 import { Ionicons } from "@expo/vector-icons";
+import React, { memo } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 
 // ============================================
@@ -24,8 +25,13 @@ interface InlineRestTimerProps {
  * - Collapses cleanly when not active (returns null)
  * - Compact single-row layout
  * - No shadows, no absolute positioning
+ *
+ * Memoized to prevent re-renders from parent state changes.
  */
-export function InlineRestTimer({ timer, onExpand }: InlineRestTimerProps) {
+export const InlineRestTimer = memo(function InlineRestTimer({
+  timer,
+  onExpand,
+}: InlineRestTimerProps) {
   const { isRunning, hasStarted, remaining, formattedTime, pause, start } =
     timer;
 
@@ -83,4 +89,4 @@ export function InlineRestTimer({ timer, onExpand }: InlineRestTimerProps) {
       </View>
     </TouchableOpacity>
   );
-}
+});

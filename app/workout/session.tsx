@@ -48,6 +48,23 @@ export default function WorkoutSessionScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background-light dark:bg-background-dark">
+      {/* Fixed Rest Timer - stays visible when scrolling */}
+      <View className="z-10 px-4 pt-2">
+        {isTimerActive ? (
+          <InlineRestTimer timer={timer} onExpand={openRestTimer} />
+        ) : (
+          <TouchableOpacity
+            onPress={handleStartRest}
+            className="flex-row items-center justify-center bg-primary-100 dark:bg-primary-900/30 border border-primary-200 dark:border-primary-800 rounded-xl px-4 py-3 mb-2"
+          >
+            <Ionicons name="timer-outline" size={20} color="#7c3aed" />
+            <Text className="font-secondaryMedium text-primary-600 dark:text-primary-400 text-base ml-2">
+              Start Rest Timer
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
       <ScrollView className="flex-1 p-4">
         {/* Header */}
         <View className="flex-row justify-between items-center mb-4">
@@ -59,22 +76,6 @@ export default function WorkoutSessionScreen() {
             </Subheading>
           </View>
         </View>
-
-        {/* Inline Rest Timer - shown when timer is active */}
-        {isTimerActive ? (
-          <InlineRestTimer timer={timer} onExpand={openRestTimer} />
-        ) : (
-          /* Start Rest button - shown when timer is not active */
-          <TouchableOpacity
-            onPress={handleStartRest}
-            className="flex-row items-center justify-center bg-primary-100 dark:bg-primary-900/30 border border-primary-200 dark:border-primary-800 rounded-xl px-4 py-3 mb-4"
-          >
-            <Ionicons name="timer-outline" size={20} color="#7c3aed" />
-            <Text className="font-secondaryMedium text-primary-600 dark:text-primary-400 text-base ml-2">
-              Start Rest Timer
-            </Text>
-          </TouchableOpacity>
-        )}
 
         {/* Add Exercise */}
         <AddExerciseForm />

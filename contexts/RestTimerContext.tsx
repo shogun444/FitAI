@@ -1,5 +1,5 @@
 import { useRestTimer, UseRestTimerReturn } from "@/hooks/useRestTimer";
-import { createContext, ReactNode, useContext, useState } from "react";
+import { createContext, ReactNode, useContext, useMemo, useState } from "react";
 
 // ============================================
 // Context
@@ -46,10 +46,14 @@ export function RestTimerProvider({ children }: RestTimerProviderProps) {
   const openModal = () => setIsModalVisible(true);
   const closeModal = () => setIsModalVisible(false);
 
+  // Memoize context value to prevent unnecessary re-renders of consumers
+  const value = useMemo(
+    () => ({ timer, isModalVisible, openModal, closeModal }),
+    [timer, isModalVisible],
+  );
+
   return (
-    <RestTimerContext.Provider
-      value={{ timer, isModalVisible, openModal, closeModal }}
-    >
+    <RestTimerContext.Provider value={value}>
       {children}
     </RestTimerContext.Provider>
   );
