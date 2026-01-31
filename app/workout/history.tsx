@@ -35,13 +35,30 @@ function WorkoutCard({ workout }: { workout: WorkoutSession }) {
   return (
     <Card className="mb-3">
       <View className="flex-row justify-between items-center mb-2">
-        <Text className="font-primarySemiBold text-lg text-gray-900 dark:text-white">
-          {formatDate(workout.startedAt)}
-        </Text>
+        <View className="flex-1">
+          <Text className="font-primarySemiBold text-lg text-gray-900 dark:text-white">
+            {formatDate(workout.startedAt)}
+          </Text>
+          {/* Program workout label */}
+          {workout.isProgramWorkout && (
+            <Text className="font-secondaryMedium text-xs text-primary-600 dark:text-primary-400 mt-0.5">
+              {workout.programName} • Session {workout.sessionIndex}
+            </Text>
+          )}
+        </View>
         <Text className="font-secondaryMedium text-gray-500">
           {formatDuration(workout.duration)}
         </Text>
       </View>
+
+      {/* Progression summary for program workouts */}
+      {workout.isProgramWorkout && workout.progressionSummary && (
+        <View className="bg-primary-50 dark:bg-primary-900/20 rounded-lg px-3 py-2 mb-3">
+          <Text className="font-secondary text-sm text-primary-700 dark:text-primary-300">
+            {workout.progressionSummary}
+          </Text>
+        </View>
+      )}
 
       <View className="flex-row gap-4">
         <View>

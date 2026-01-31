@@ -28,6 +28,13 @@ export interface WorkoutSession {
   startedAt: number;
   endedAt: number | null;
   duration: number; // in seconds
+
+  // Program workout metadata (optional - only for paid program sessions)
+  isProgramWorkout?: boolean;
+  programId?: string;
+  programName?: string;
+  sessionIndex?: number;
+  progressionSummary?: string; // e.g., "2 lifts increased weight"
 }
 
 export interface TimerState {
