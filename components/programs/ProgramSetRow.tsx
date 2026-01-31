@@ -2,6 +2,7 @@ import {
   AutoAdvanceNumberInput,
   AutoAdvanceNumberInputRef,
 } from "@/components/ui";
+import { formatPreviousPerformance } from "@/lib/formatters";
 import React, { forwardRef, memo } from "react";
 import { Text, View } from "react-native";
 
@@ -124,7 +125,7 @@ export const ProgramSetRow = memo(
               </Text>
               {hasPreviousData && (
                 <Text className="font-secondary text-gray-400 dark:text-gray-500 text-xs mt-0.5">
-                  Prev: {previousWeight} kg × {previousReps}
+                  {formatPreviousPerformance(previousWeight, previousReps)}
                 </Text>
               )}
             </View>

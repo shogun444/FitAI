@@ -1,4 +1,5 @@
 import { Card } from "@/components/ui/Card";
+import { formatWeightReps } from "@/lib/formatters";
 import { Exercise, WorkoutSession } from "@/types";
 import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
@@ -39,7 +40,7 @@ function LastSessionExercise({ exercise }: { exercise: Exercise }) {
       <View className="flex-row flex-wrap gap-x-3 gap-y-1">
         {completedSets.map((set, index) => (
           <Text key={set.id} className="font-secondary text-xs text-gray-500">
-            Set {set.weight ?? 0}kg × {set.reps ?? 0} reps
+            {formatWeightReps(set.weight, set.reps)}
           </Text>
         ))}
       </View>
@@ -74,7 +75,7 @@ export function LastSession({ workout }: LastSessionProps) {
       >
         <View>
           <Text className="font-primarySemiBold text-base text-gray-900 dark:text-white">
-            Last Session 
+            Last Session
           </Text>
           <Text className="font-secondary text-xs text-gray-500 mt-0.5">
             {formatDate(workout.startedAt)} · {formatDuration(workout.duration)}

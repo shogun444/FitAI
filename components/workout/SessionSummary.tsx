@@ -1,4 +1,5 @@
 import { Card } from "@/components/ui/Card";
+import { formatWeightReps } from "@/lib/formatters";
 import { WorkoutSession, WorkoutSet } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { useMemo } from "react";
@@ -179,7 +180,7 @@ function PRList({ prs }: PRListProps) {
               {pr.exerciseName}
             </Text>
             <Text className="font-secondary text-sm text-primary">
-              {pr.weight} kg × {pr.reps} reps
+              {formatWeightReps(pr.weight, pr.reps, { showRepsSuffix: true })}
             </Text>
           </View>
         </View>

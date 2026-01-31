@@ -1,3 +1,4 @@
+import { formatWeightReps } from "@/lib/formatters";
 import { useWorkoutStore } from "@/store";
 import React, { memo, useCallback, useState } from "react";
 import { Pressable, Text, View } from "react-native";
@@ -49,7 +50,7 @@ export const LastSessionSummary = memo(function LastSessionSummary({
                 Set {index + 1}
               </Text>
               <Text className="flex-1 font-secondaryMedium text-xs text-gray-700 dark:text-gray-300 text-right">
-                {set.reps ?? 0} reps × {set.weight ?? 0} kg
+                {formatWeightReps(set.weight, set.reps)}
               </Text>
             </View>
           ))}

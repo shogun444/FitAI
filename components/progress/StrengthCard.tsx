@@ -1,4 +1,5 @@
 import { Card } from "@/components/ui/Card";
+import { formatWeightReps } from "@/lib/formatters";
 import { ExercisePR, StrengthMetrics } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import React, { memo } from "react";
@@ -19,10 +20,6 @@ function formatDate(timestamp: number): string {
   });
 }
 
-function formatSet(weight: number, reps: number): string {
-  return `${weight} kg × ${reps} reps`;
-}
-
 const ExercisePRItem = memo(function ExercisePRItem({
   pr,
 }: ExercisePRItemProps) {
@@ -35,7 +32,9 @@ const ExercisePRItem = memo(function ExercisePRItem({
       <View className="flex-row items-center">
         <Ionicons name="trophy-outline" size={14} color="#c9f158" />
         <Text className="font-secondaryMedium text-sm text-primary ml-1.5">
-          {formatSet(pr.bestSet.weight, pr.bestSet.reps)}
+          {formatWeightReps(pr.bestSet.weight, pr.bestSet.reps, {
+            showRepsSuffix: true,
+          })}
         </Text>
         <Text className="font-secondary text-xs text-gray-400 ml-2">
           {formatDate(pr.bestSet.date)}
@@ -46,7 +45,10 @@ const ExercisePRItem = memo(function ExercisePRItem({
         <View className="flex-row items-center mt-1.5">
           <Ionicons name="time-outline" size={14} color="#9ca3af" />
           <Text className="font-secondary text-sm text-gray-500 ml-1.5">
-            Last: {formatSet(pr.lastSession.weight, pr.lastSession.reps)}
+            Last:{" "}
+            {formatWeightReps(pr.lastSession.weight, pr.lastSession.reps, {
+              showRepsSuffix: true,
+            })}
           </Text>
         </View>
       )}

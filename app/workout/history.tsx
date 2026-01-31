@@ -1,4 +1,5 @@
 import { Card, Heading, Subheading } from "@/components";
+import { formatSetDisplay } from "@/lib/formatters";
 import { useWorkoutStore } from "@/store";
 import { WorkoutSession } from "@/types";
 import { useEffect } from "react";
@@ -89,7 +90,7 @@ function WorkoutCard({ workout }: { workout: WorkoutSession }) {
                   key={set.id}
                   className="font-secondary text-xs text-gray-500 dark:text-gray-500 ml-4"
                 >
-                  Set {idx + 1}: {set.reps ?? 0} reps × {set.weight ?? 0} kg
+                  {formatSetDisplay(idx + 1, set.weight, set.reps)}
                 </Text>
               ))}
             </View>

@@ -1,7 +1,7 @@
-import { Card } from "@/components/ui/Card";
+import { AutoAdvanceNumberInputRef, Card } from "@/components/ui";
 import { useWorkoutStore } from "@/store";
 import { Exercise } from "@/types";
-import React, { memo, useCallback } from "react";
+import React, { createRef, memo, useCallback, useMemo } from "react";
 import { Pressable, Text, View } from "react-native";
 import { LastSessionSummary } from "./LastSessionSummary";
 import { SetRow } from "./SetRow";
@@ -11,13 +11,19 @@ interface ExerciseItemProps {
 }
 
 /**
- * Exercise card with sets list.
+ * Exercise card with sets list and auto-advance focus.
  * Memoized to prevent re-renders when other exercises change.
  */
 export const ExerciseItem = memo(function ExerciseItem({
   exercise,
 }: ExerciseItemProps) {
   const { removeExercise, addSet, toggleSetCompleted } = useWorkoutStore();
+
+  // Create refs for each set's weight input (for auto-advance: kg → reps → next kg)
+  const setRefs = useMemo(
+    () => exercise.sets.map(() => createRef<AutoAdvanceNumberInputRef>()),
+    [exercise.sets.length],
+  );
 
   const handleSetFocus = useCallback(
     (currentIndex: number) => {
@@ -61,34 +67,25 @@ export const ExerciseItem = memo(function ExerciseItem({
       {/* Last Session Reference */}
       <LastSessionSummary exerciseName={exercise.name} />
 
-      {/* Sets Table Header */}
-      <View className="flex-row mb-2 mt-3 pb-2 border-b border-gray-100 dark:border-gray-800">
-        <Text className="w-12 font-secondaryMedium text-gray-500 text-center text-xs uppercase tracking-wide">
-          Set
-        </Text>
-        <Text className="flex-1 font-secondaryMedium text-gray-500 text-center text-xs uppercase tracking-wide">
-          Reps
-        </Text>
-        <Text className="flex-1 font-secondaryMedium text-gray-500 text-center text-xs uppercase tracking-wide">
-          kg
-        </Text>
-        <Text className="w-12 font-secondaryMedium text-gray-500 text-center text-xs uppercase tracking-wide">
-          Done
-        </Text>
-        <Text className="w-10" />
-      </View>
-
       {/* Sets Rows */}
-      <View className="gap-1">
-        {exercise.sets.map((set, index) => (
-          <SetRow
-            key={set.id}
-            exerciseId={exercise.id}
-            set={set}
-            index={index}
-            onFocus={() => handleSetFocus(index)}
-          />
-        ))}
+      <View className="gap-2 mt-3">
+        {exercise.sets.map((set, index) => {
+          const isLastSet = index === exercise.sets.length - 1;
+          const nextRef = isLastSet ? undefined : setRefs[index + 1];
+
+          return (
+            <SetRow
+              key={set.id}
+              ref={setRefs[index]}
+              exerciseId={exercise.id}
+              set={set}
+              index={index}
+              onFocus={() => handleSetFocus(index)}
+              nextWeightInputRef={nextRef}
+              isLastSet={isLastSet}
+            />
+          );
+        })}
       </View>
 
       {/* Add Set Button */}
