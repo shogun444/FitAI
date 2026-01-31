@@ -10,7 +10,6 @@ import {
   LiftPerformance,
   PrescribedLift,
   ProgramInstance,
-  ProgramLiftId,
   WorkoutSession,
   WorkoutSet,
 } from "@/types";

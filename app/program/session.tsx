@@ -168,6 +168,15 @@ export default function ProgramSessionScreen() {
   // Global rest timer (shared across all screens)
   const { timer, openModal: openRestTimer } = useGlobalRestTimer();
 
+  // Check if timer is active (running or paused with time remaining)
+  const isTimerActive = timer.hasStarted && timer.remaining > 0;
+
+  // Start rest timer with default duration
+  const handleStartRest = () => {
+    timer.reset();
+    timer.start();
+  };
+
   // Session progress state
   const [currentProgress, setCurrentProgress] = useState<LiftProgress>({
     liftIndex: 0,
@@ -325,25 +334,26 @@ export default function ProgramSessionScreen() {
         className="flex-1 px-4 py-4"
         contentContainerStyle={{ paddingBottom: 100 }}
       >
-        <View className="flex-row items-center justify-between mb-1">
-          <Heading>Today's Workout</Heading>
-          {/* Manual rest timer button - opens global timer */}
-          <TouchableOpacity
-            onPress={openRestTimer}
-            className="flex-row items-center px-3 py-2 bg-primary-100 dark:bg-primary-900/30 rounded-lg"
-          >
-            <Ionicons name="timer-outline" size={18} color="#7c3aed" />
-            <Text className="font-secondaryMedium text-primary-600 text-sm ml-1.5">
-              Rest
-            </Text>
-          </TouchableOpacity>
-        </View>
+        <Heading className="mb-1">Today's Workout</Heading>
         <Subheading className="mb-4">
           Enter reps for each set. Tap Rest when ready.
         </Subheading>
 
-        {/* Inline rest timer - contextual, below header */}
-        <InlineRestTimer timer={timer} onExpand={openRestTimer} />
+        {/* Inline Rest Timer - shown when timer is active */}
+        {isTimerActive ? (
+          <InlineRestTimer timer={timer} onExpand={openRestTimer} />
+        ) : (
+          /* Start Rest button - shown when timer is not active */
+          <TouchableOpacity
+            onPress={handleStartRest}
+            className="flex-row items-center justify-center bg-primary-100 dark:bg-primary-900/30 border border-primary-200 dark:border-primary-800 rounded-xl px-4 py-3 mb-4"
+          >
+            <Ionicons name="timer-outline" size={20} color="#7c3aed" />
+            <Text className="font-secondaryMedium text-primary-600 dark:text-primary-400 text-base ml-2">
+              Start Rest Timer
+            </Text>
+          </TouchableOpacity>
+        )}
 
         {/* Lift cards with cross-lift auto-advance refs */}
         {session.lifts.map((lift, liftIndex) => {

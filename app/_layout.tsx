@@ -104,8 +104,10 @@ function RootLayoutContent() {
   const { timer, isModalVisible, openModal, closeModal } = useGlobalRestTimer();
   const pathname = usePathname();
 
-  // Hide global timer on session page (it has its own inline timer)
-  const isSessionPage = pathname === "/program/session";
+  // Hide floating timer indicator on session pages (they have their own trigger button)
+  // The timer STILL works - just the floating indicator is hidden to avoid visual clutter
+  const isSessionPage =
+    pathname === "/program/session" || pathname === "/workout/session";
 
   return (
     <View className="flex-1">
@@ -119,14 +121,14 @@ function RootLayoutContent() {
         />
       </Stack>
 
-      {/* Global Rest Timer Indicator - hidden on session page */}
+      {/* Global Rest Timer Indicator - hidden on session pages (they have trigger buttons) */}
       {!isModalVisible && !isSessionPage && (
         <View className="absolute top-28 left-4 right-4 z-40">
           <InlineRestTimer timer={timer} onExpand={openModal} />
         </View>
       )}
 
-      {/* Global Rest Timer Modal */}
+      {/* Global Rest Timer Modal - available on ALL screens */}
       {isModalVisible && (
         <View className="absolute inset-0 z-50">
           <ProgramRestTimer timer={timer} onDismiss={closeModal} />
