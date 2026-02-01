@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui/Card";
-import { formatWeightReps } from "@/lib/formatters";
+import { formatSetDisplay } from "@/lib/formatters";
 import { Exercise, WorkoutSession } from "@/types";
+import { router } from "expo-router";
 import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 
@@ -33,18 +34,22 @@ function LastSessionExercise({ exercise }: { exercise: Exercise }) {
   const completedSets = exercise.sets.filter((s) => s.completed);
 
   return (
-    <View className="mb-3  last:mb-0">
-      <Text className="font-secondary text-sm text-gray-900 dark:text-white mb-1.5">
-        {exercise.name}
+    <Pressable onPress={()=>router.push('/workout/history')}>
+
+   
+    <View className="mb-2">
+      <Text className="font-secondary text-gray-600 dark:text-gray-400 mb-1">
+        • {exercise.name} ({completedSets.length} sets)
       </Text>
-      <View className="flex-col   gap-y-1">
-        {completedSets.map((set, index) => (
-          <Text key={set.id} className="font-secondary text-xs text-gray-500">
-            {formatWeightReps(set.weight, set.reps)} reps
-          </Text>
-        ))}
-      </View>
-    </View>
+      {completedSets.map((set, index) => (
+        <Text
+          key={set.id}
+          className="font-secondary text-xs text-gray-500 dark:text-gray-500 ml-4"
+        >
+          {formatSetDisplay(index + 1, set.weight, set.reps)}
+        </Text>
+      ))}
+    </View> </Pressable>
   );
 }
 
@@ -80,7 +85,6 @@ export function LastSession({ workout }: LastSessionProps) {
           <Text className="font-secondary text-xs text-gray-500 mt-0.5">
             {formatDate(workout.startedAt)} · {formatDuration(workout.duration)}
           </Text>
-          
         </View>
         <Text className="font-secondary text-gray-400 text-sm">
           {isExpanded ? "▼" : "▶"}
@@ -88,7 +92,7 @@ export function LastSession({ workout }: LastSessionProps) {
       </Pressable>
 
       {isExpanded && (
-        <View className="mt-4  py-4 border-t border-gray-200 dark:border-gray-800">
+        <View className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
           {exercisesWithSets.map((exercise) => (
             <LastSessionExercise key={exercise.id} exercise={exercise} />
           ))}
