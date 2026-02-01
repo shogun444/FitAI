@@ -1,9 +1,18 @@
 import { Card } from "@/components/ui/Card";
+import { EXERCISE_CATALOG } from "@/data/exercises";
 import { formatWeightReps } from "@/lib/formatters";
 import { WorkoutSession, WorkoutSet } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { useMemo } from "react";
 import { Text, View } from "react-native";
+
+// Helper to check if an exercise is bodyweight from catalog
+function isBodyweightExercise(exerciseName: string): boolean {
+  const catalogExercise = EXERCISE_CATALOG.find(
+    (e) => e.name.toLowerCase() === exerciseName.toLowerCase(),
+  );
+  return catalogExercise?.allowsExternalLoad === false;
+}
 
 // ============================================
 // Types
@@ -169,22 +178,28 @@ function PRList({ prs }: PRListProps) {
           New Personal Records
         </Text>
       </View>
-      {prs.map((pr, index) => (
-        <View
-          key={`${pr.exerciseName}-${index}`}
-          className="flex-row items-center py-2.5 border-b border-gray-100 dark:border-gray-800 last:border-b-0"
-        >
-          <Ionicons name="star" size={16} color="#c9f158" />
-          <View className="ml-3 flex-1">
-            <Text className="font-primaryMedium text-gray-900 dark:text-white">
-              {pr.exerciseName}
-            </Text>
-            <Text className="font-secondaryMedium text-sm text-primary">
-              {formatWeightReps(pr.weight, pr.reps, { showRepsSuffix: true })}
-            </Text>
+      {prs.map((pr, index) => {
+        const isBodyweight = isBodyweightExercise(pr.exerciseName);
+        return (
+          <View
+            key={`${pr.exerciseName}-${index}`}
+            className="flex-row items-center py-2.5 border-b border-gray-100 dark:border-gray-800 last:border-b-0"
+          >
+            <Ionicons name="star" size={16} color="#c9f158" />
+            <View className="ml-3 flex-1">
+              <Text className="font-primaryMedium text-gray-900 dark:text-white">
+                {pr.exerciseName}
+              </Text>
+              <Text className="font-secondaryMedium text-sm text-primary">
+                {formatWeightReps(pr.weight, pr.reps, {
+                  showRepsSuffix: true,
+                  isBodyweight,
+                })}
+              </Text>
+            </View>
           </View>
-        </View>
-      ))}
+        );
+      })}
     </Card>
   );
 }

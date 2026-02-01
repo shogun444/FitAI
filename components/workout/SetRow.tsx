@@ -19,27 +19,39 @@ interface SetRowProps {
   set: WorkoutSet;
   index: number;
   onFocus?: () => void;
-  /** Ref to the next set's weight input (for auto-advance from reps → next kg) */
-  nextWeightInputRef?: React.RefObject<AutoAdvanceNumberInputRef | null>;
+  /** Ref to the next set's first input (kg for weighted, reps for bodyweight) */
+  nextInputRef?: React.RefObject<AutoAdvanceNumberInputRef | null>;
   /** If true, this is the last set (dismisses keyboard) */
   isLastSet?: boolean;
+  /** Whether this exercise allows external load (weight). Bodyweight = false */
+  allowsExternalLoad?: boolean;
 }
 
 /**
  * Set row for free workouts with auto-advance inputs.
  *
- * FOCUS FLOW: kg → reps → next set's kg
+ * FOCUS FLOW:
+ * - Weighted: kg → reps → next set's kg
+ * - Bodyweight: reps → next set's reps
  *
  * Features:
- * - Auto-advance focus: kg → reps → next kg
+ * - Auto-advance focus
  * - Always editable (no locking)
- * - Completion derived from values (reps + weight filled)
+ * - Completion derived from values (reps for bodyweight, reps + weight for weighted)
  * - Manual checkmark toggle
  * - Remove set option
  */
 export const SetRow = memo(
   forwardRef<AutoAdvanceNumberInputRef, SetRowProps>(function SetRow(
-    { exerciseId, set, index, onFocus, nextWeightInputRef, isLastSet = false },
+    {
+      exerciseId,
+      set,
+      index,
+      onFocus,
+      nextInputRef,
+      isLastSet = false,
+      allowsExternalLoad = true,
+    },
     ref,
   ) {
     const { updateSet, toggleSetCompleted, removeSet } = useWorkoutStore();
@@ -50,15 +62,32 @@ export const SetRow = memo(
     const weightInputRef = useRef<TextInput>(null);
     const repsInputRef = useRef<AutoAdvanceNumberInputRef>(null);
 
-    // Expose the WEIGHT input via ref (so reps can advance to next set's kg)
+    // Expose the first input via ref:
+    // - Weighted: weight input (so reps can advance to next set's kg)
+    // - Bodyweight: reps input (so reps can advance to next set's reps)
     useImperativeHandle(ref, () => ({
-      focus: () => weightInputRef.current?.focus(),
-      blur: () => weightInputRef.current?.blur(),
+      focus: () => {
+        if (allowsExternalLoad) {
+          weightInputRef.current?.focus();
+        } else {
+          repsInputRef.current?.focus();
+        }
+      },
+      blur: () => {
+        if (allowsExternalLoad) {
+          weightInputRef.current?.blur();
+        } else {
+          repsInputRef.current?.blur();
+        }
+      },
     }));
 
     // Derive states
     const isCompleted = set.completed;
-    const isReadyToComplete = set.reps !== null && set.weight !== null;
+    // Bodyweight exercises only need reps, weighted exercises need both
+    const isReadyToComplete = allowsExternalLoad
+      ? set.reps !== null && set.weight !== null
+      : set.reps !== null;
 
     // Determine row styling based on state
     const getRowStyle = () => {
@@ -104,10 +133,21 @@ export const SetRow = memo(
     );
 
     const handleComplete = useCallback(() => {
-      if (set.reps !== null && set.weight !== null) {
+      // Bodyweight exercises only need reps, weighted need both
+      const canComplete = allowsExternalLoad
+        ? set.reps !== null && set.weight !== null
+        : set.reps !== null;
+      if (canComplete) {
         toggleSetCompleted(exerciseId, set.id);
       }
-    }, [toggleSetCompleted, exerciseId, set.id, set.reps, set.weight]);
+    }, [
+      toggleSetCompleted,
+      exerciseId,
+      set.id,
+      set.reps,
+      set.weight,
+      allowsExternalLoad,
+    ]);
 
     const handleFocus = useCallback(() => {
       if (set.completed) {
@@ -152,32 +192,36 @@ export const SetRow = memo(
           </Text>
         </View>
 
-        {/* Weight input (kg first for WEIGHT → REPS standard) */}
-        <View className="flex-row items-center flex-1">
-          <TextInput
-            ref={weightInputRef}
-            value={weight}
-            onChangeText={handleWeightChange}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-            placeholder="—"
-            keyboardType="decimal-pad"
-            placeholderTextColor="#9ca3af"
-            selectTextOnFocus
-            className={`w-16 h-12 px-2 py-2 text-center rounded-lg font-secondarySemiBold text-lg ${getInputStyle()}`}
-          />
-          <Text className="font-secondary text-gray-400 dark:text-gray-500 text-xs ml-1">
-            kg
-          </Text>
-        </View>
+        {/* Weight input (only for weighted exercises) */}
+        {allowsExternalLoad && (
+          <View className="flex-row items-center flex-1">
+            <TextInput
+              ref={weightInputRef}
+              value={weight}
+              onChangeText={handleWeightChange}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              placeholder="—"
+              keyboardType="decimal-pad"
+              placeholderTextColor="#9ca3af"
+              selectTextOnFocus
+              className={`w-16 h-12 px-2 py-2 text-center rounded-lg font-secondarySemiBold text-lg ${getInputStyle()}`}
+            />
+            <Text className="font-secondary text-gray-400 dark:text-gray-500 text-xs ml-1">
+              kg
+            </Text>
+          </View>
+        )}
 
         {/* Reps input */}
-        <View className="flex-row items-center flex-1">
+        <View
+          className={`flex-row items-center ${allowsExternalLoad ? "flex-1" : "flex-[2]"}`}
+        >
           <AutoAdvanceNumberInput
             ref={repsInputRef}
             value={set.reps}
             onChange={handleRepsChange}
-            nextInputRef={nextWeightInputRef}
+            nextInputRef={nextInputRef}
             isLast={isLastSet}
             placeholder="—"
             placeholderTextColor="#9ca3af"

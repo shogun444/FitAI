@@ -1,4 +1,5 @@
 import { Card } from "@/components/ui/Card";
+import { EXERCISE_CATALOG } from "@/data/exercises";
 import { formatSetDisplay } from "@/lib/formatters";
 import { Exercise, WorkoutSession } from "@/types";
 import { router } from "expo-router";
@@ -8,6 +9,13 @@ import { Pressable, Text, View } from "react-native";
 // ============================================
 // Helpers
 // ============================================
+
+function isBodyweightExercise(exerciseName: string): boolean {
+  const catalogExercise = EXERCISE_CATALOG.find(
+    (e) => e.name.toLowerCase() === exerciseName.toLowerCase(),
+  );
+  return catalogExercise?.allowsExternalLoad === false;
+}
 
 function formatDate(timestamp: number): string {
   const date = new Date(timestamp);
@@ -32,6 +40,7 @@ function formatDuration(seconds: number): string {
 
 function LastSessionExercise({ exercise }: { exercise: Exercise }) {
   const completedSets = exercise.sets.filter((s) => s.completed);
+  const isBodyweight = isBodyweightExercise(exercise.name);
 
   return (
     <Pressable onPress={() => router.push("/workout/history")}>
@@ -44,7 +53,9 @@ function LastSessionExercise({ exercise }: { exercise: Exercise }) {
             key={set.id}
             className="font-secondary text-xs text-gray-500 dark:text-gray-500 ml-4"
           >
-            {formatSetDisplay(index + 1, set.weight, set.reps)}
+            {formatSetDisplay(index + 1, set.weight, set.reps, {
+              isBodyweight,
+            })}
           </Text>
         ))}
       </View>

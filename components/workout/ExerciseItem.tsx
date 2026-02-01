@@ -1,4 +1,5 @@
 import { AutoAdvanceNumberInputRef, Card } from "@/components/ui";
+import { EXERCISE_CATALOG } from "@/data/exercises";
 import { useWorkoutStore } from "@/store";
 import { Exercise } from "@/types";
 import React, { createRef, memo, useCallback, useMemo } from "react";
@@ -19,7 +20,19 @@ export const ExerciseItem = memo(function ExerciseItem({
 }: ExerciseItemProps) {
   const { removeExercise, addSet, toggleSetCompleted } = useWorkoutStore();
 
-  // Create refs for each set's weight input (for auto-advance: kg → reps → next kg)
+  // Look up exercise from catalog to determine if it allows external load
+  const catalogExercise = useMemo(
+    () =>
+      EXERCISE_CATALOG.find(
+        (e) => e.name.toLowerCase() === exercise.name.toLowerCase(),
+      ),
+    [exercise.name],
+  );
+  const allowsExternalLoad = catalogExercise?.allowsExternalLoad ?? true;
+
+  // Create refs for each set's first input (for auto-advance)
+  // Weighted: kg → reps → next kg
+  // Bodyweight: reps → next reps
   const setRefs = useMemo(
     () => exercise.sets.map(() => createRef<AutoAdvanceNumberInputRef>()),
     [exercise.sets.length],
@@ -29,17 +42,17 @@ export const ExerciseItem = memo(function ExerciseItem({
     (currentIndex: number) => {
       if (currentIndex > 0) {
         const previousSet = exercise.sets[currentIndex - 1];
-        if (
-          previousSet &&
-          !previousSet.completed &&
-          previousSet.reps !== null &&
-          previousSet.weight !== null
-        ) {
+        // Auto-complete previous set when moving to next
+        // For bodyweight: only check reps, for weighted: check both
+        const canAutoComplete = allowsExternalLoad
+          ? previousSet.reps !== null && previousSet.weight !== null
+          : previousSet.reps !== null;
+        if (previousSet && !previousSet.completed && canAutoComplete) {
           toggleSetCompleted(exercise.id, previousSet.id);
         }
       }
     },
-    [exercise.sets, exercise.id, toggleSetCompleted],
+    [exercise.sets, exercise.id, toggleSetCompleted, allowsExternalLoad],
   );
 
   const handleRemove = useCallback(() => {
@@ -81,8 +94,9 @@ export const ExerciseItem = memo(function ExerciseItem({
               set={set}
               index={index}
               onFocus={() => handleSetFocus(index)}
-              nextWeightInputRef={nextRef}
+              nextInputRef={nextRef}
               isLastSet={isLastSet}
+              allowsExternalLoad={allowsExternalLoad}
             />
           );
         })}

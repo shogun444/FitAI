@@ -1,10 +1,19 @@
 import { Card, Heading, Subheading } from "@/components";
+import { EXERCISE_CATALOG } from "@/data/exercises";
 import { formatSetDisplay } from "@/lib/formatters";
 import { useWorkoutStore } from "@/store";
 import { WorkoutSession } from "@/types";
 import { useEffect } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+// Helper to check if an exercise is bodyweight from catalog
+function isBodyweightExercise(exerciseName: string): boolean {
+  const catalogExercise = EXERCISE_CATALOG.find(
+    (e) => e.name.toLowerCase() === exerciseName.toLowerCase(),
+  );
+  return catalogExercise?.allowsExternalLoad === false;
+}
 
 function formatDuration(seconds: number): string {
   const hrs = Math.floor(seconds / 3600);
@@ -80,21 +89,26 @@ function WorkoutCard({ workout }: { workout: WorkoutSession }) {
 
       {workout.exercises.length > 0 && (
         <View className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-          {workout.exercises.map((ex) => (
-            <View key={ex.id} className="mb-2">
-              <Text className="font-secondary text-gray-600 dark:text-gray-400 mb-1">
-                • {ex.name} ({ex.sets.length} sets)
-              </Text>
-              {ex.sets.map((set, idx) => (
-                <Text
-                  key={set.id}
-                  className="font-secondary text-xs text-gray-500 dark:text-gray-500 ml-4"
-                >
-                  {formatSetDisplay(idx + 1, set.weight, set.reps)}
+          {workout.exercises.map((ex) => {
+            const isBodyweight = isBodyweightExercise(ex.name);
+            return (
+              <View key={ex.id} className="mb-2">
+                <Text className="font-secondary text-gray-600 dark:text-gray-400 mb-1">
+                  • {ex.name} ({ex.sets.length} sets)
                 </Text>
-              ))}
-            </View>
-          ))}
+                {ex.sets.map((set, idx) => (
+                  <Text
+                    key={set.id}
+                    className="font-secondary text-xs text-gray-500 dark:text-gray-500 ml-4"
+                  >
+                    {formatSetDisplay(idx + 1, set.weight, set.reps, {
+                      isBodyweight,
+                    })}
+                  </Text>
+                ))}
+              </View>
+            );
+          })}
         </View>
       )}
     </Card>

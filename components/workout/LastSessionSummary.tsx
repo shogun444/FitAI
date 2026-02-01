@@ -1,6 +1,7 @@
+import { EXERCISE_CATALOG } from "@/data/exercises";
 import { formatWeightReps } from "@/lib/formatters";
 import { useWorkoutStore } from "@/store";
-import React, { memo, useCallback, useState } from "react";
+import React, { memo, useCallback, useMemo, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 
 interface LastSessionSummaryProps {
@@ -13,6 +14,16 @@ export const LastSessionSummary = memo(function LastSessionSummary({
   const { getLastSessionForExercise } = useWorkoutStore();
   const [isExpanded, setIsExpanded] = useState(true);
   const lastSession = getLastSessionForExercise(exerciseName);
+
+  // Look up exercise from catalog to determine if it's bodyweight
+  const catalogExercise = useMemo(
+    () =>
+      EXERCISE_CATALOG.find(
+        (e) => e.name.toLowerCase() === exerciseName.toLowerCase(),
+      ),
+    [exerciseName],
+  );
+  const isBodyweight = catalogExercise?.allowsExternalLoad === false;
 
   const toggleExpanded = useCallback(() => {
     setIsExpanded((prev) => !prev);
@@ -50,7 +61,7 @@ export const LastSessionSummary = memo(function LastSessionSummary({
                 Set {index + 1}
               </Text>
               <Text className="flex-1 font-secondaryMedium text-xs text-gray-700 dark:text-gray-300 text-right">
-                {formatWeightReps(set.weight, set.reps)}
+                {formatWeightReps(set.weight, set.reps, { isBodyweight })}
               </Text>
             </View>
           ))}
