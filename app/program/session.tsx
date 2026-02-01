@@ -119,11 +119,11 @@ const LiftCard = memo(function LiftCard({
           </Text>
           <View className="flex-row items-center mt-1">
             <View className="bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded mr-2">
-              <Text className="font-primaryBold text-primary-600 text-sm">
+              <Text className="font-secondarySemiBold text-primary-600 text-sm">
                 {lift.weight} kg
               </Text>
             </View>
-            <Text className="font-secondary text-gray-500 dark:text-gray-400 text-sm">
+            <Text className="font-secondaryMedium text-gray-500 dark:text-gray-400 text-sm">
               {lift.sets} × {lift.reps} reps
             </Text>
           </View>
@@ -190,7 +190,7 @@ const LiftCard = memo(function LiftCard({
         <Text className="font-secondary text-gray-500 dark:text-gray-400 text-sm">
           Sets at target ({lift.reps}+ reps)
         </Text>
-        <Text className="font-primarySemiBold text-gray-900 dark:text-white text-sm">
+        <Text className="font-secondarySemiBold text-gray-900 dark:text-white text-sm">
           {completedSets} / {lift.sets}
         </Text>
       </View>

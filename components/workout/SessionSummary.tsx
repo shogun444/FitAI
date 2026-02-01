@@ -128,7 +128,7 @@ function SummaryStatItem({ icon, label, value }: SummaryStatItemProps) {
       </View>
       <View className="flex-1">
         <Text className="font-secondary text-gray-500 text-xs">{label}</Text>
-        <Text className="font-primarySemiBold text-lg text-gray-900 dark:text-white">
+        <Text className="font-secondarySemiBold text-lg text-gray-900 dark:text-white">
           {value}
         </Text>
       </View>
@@ -179,7 +179,7 @@ function PRList({ prs }: PRListProps) {
             <Text className="font-primaryMedium text-gray-900 dark:text-white">
               {pr.exerciseName}
             </Text>
-            <Text className="font-secondary text-sm text-primary">
+            <Text className="font-secondaryMedium text-sm text-primary">
               {formatWeightReps(pr.weight, pr.reps, { showRepsSuffix: true })}
             </Text>
           </View>

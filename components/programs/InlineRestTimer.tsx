@@ -57,7 +57,7 @@ export const InlineRestTimer = memo(function InlineRestTimer({
 
       {/* Time display */}
       <View className="flex-1">
-        <Text className="font-primaryBold text-primary-600 dark:text-primary-400 text-xl">
+        <Text className="font-secondarySemiBold text-primary-600 dark:text-primary-400 text-xl">
           {formattedTime}
         </Text>
         <Text className="font-secondary text-primary-500/70 dark:text-primary-400/70 text-xs">

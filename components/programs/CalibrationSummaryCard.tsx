@@ -33,7 +33,7 @@ export function CalibrationSummaryCard({
                 <Text className="font-secondaryMedium text-gray-900 dark:text-white text-base">
                   {lift.name}
                 </Text>
-                <Text className="font-primaryBold text-primary-600 text-lg">
+                <Text className="font-secondarySemiBold text-primary-600 text-lg">
                   {result.startingWeight} kg
                 </Text>
               </View>

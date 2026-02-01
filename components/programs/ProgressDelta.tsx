@@ -56,11 +56,10 @@ export const ProgressDelta = memo(function ProgressDelta({
         </Text>
         <View className="mx-2 h-3 w-px bg-gray-300 dark:bg-gray-600" />
         <View className="flex-row items-center">
-           <Ionicons name="trending-up" size={14} color="#65a30d" />
+          <Ionicons name="trending-up" size={14} color="#65a30d" />
           <Text className="font-secondaryMedium text-primary-700 ml-1 text-xs">
             +{delta} kg
           </Text>
-         
         </View>
       </View>
     );
@@ -69,13 +68,13 @@ export const ProgressDelta = memo(function ProgressDelta({
   // Transition variant: "27 kg → 28 kg (+1 kg)"
   return (
     <View className={`flex-row items-center ${className}`}>
-      <Text className="font-secondary text-gray-400 dark:text-gray-500 text-sm">
+      <Text className="font-secondaryMedium text-gray-400 dark:text-gray-500 text-sm">
         {previousWeight} kg
       </Text>
       <Text className="font-secondary text-gray-300 dark:text-gray-600 text-sm mx-2">
         →
       </Text>
-      <Text className="font-primarySemiBold text-gray-900 dark:text-white text-sm">
+      <Text className="font-secondarySemiBold text-gray-900 dark:text-white text-sm">
         {currentWeight} kg
       </Text>
       <View className="ml-2 flex-row items-center bg-primary/20 dark:bg-primary/30 px-2 py-0.5 rounded-full">

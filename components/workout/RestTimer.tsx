@@ -146,7 +146,7 @@ const TimeWheel = memo(function TimeWheel({
               style={{ height: ITEM_HEIGHT }}
             >
               <Text
-                className={`font-primaryBold text-3xl ${
+                className={`font-secondarySemiBold text-3xl ${
                   isSelected
                     ? "text-primary"
                     : "text-gray-300 dark:text-gray-600"
@@ -206,11 +206,13 @@ const RestTimePicker = memo(function RestTimePicker({
       {/* Large Timer Display */}
       <Pressable onPress={onTogglePicker}>
         <View className="flex-row items-center justify-center mb-4">
-          <Text className="font-primaryBold text-6xl text-primary">
+          <Text className="font-secondarySemiBold text-6xl text-primary">
             {minutes.toString().padStart(2, "0")}
           </Text>
-          <Text className="font-primaryBold text-6xl text-primary mx-2">:</Text>
-          <Text className="font-primaryBold text-6xl text-primary">
+          <Text className="font-secondarySemiBold text-6xl text-primary mx-2">
+            :
+          </Text>
+          <Text className="font-secondarySemiBold text-6xl text-primary">
             {roundedSeconds.toString().padStart(2, "0")}
           </Text>
         </View>
@@ -231,7 +233,9 @@ const RestTimePicker = memo(function RestTimePicker({
           </View>
         </View>
 
-        <Text className="font-primaryBold text-2xl text-gray-400 mx-4">:</Text>
+        <Text className="font-secondarySemiBold text-2xl text-gray-400 mx-4">
+          :
+        </Text>
 
         <View className="items-center">
           <Text className="font-secondaryMedium text-xs text-gray-500 mb-1">
@@ -294,7 +298,7 @@ export function RestTimer() {
           onPress={() => !timer.isRunning && setShowPicker(true)}
           disabled={timer.isRunning}
         >
-          <Text className="font-primaryBold text-5xl text-primary text-center my-6">
+          <Text className="font-secondarySemiBold text-5xl text-primary text-center my-6">
             {formatTime(timer.remaining)}
           </Text>
         </Pressable>

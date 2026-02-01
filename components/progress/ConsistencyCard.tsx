@@ -27,7 +27,7 @@ const MetricItem = memo(function MetricItem({
           {label}
         </Text>
       </View>
-      <Text className="font-primaryBold text-2xl text-gray-900 dark:text-white">
+      <Text className="font-secondarySemiBold text-2xl text-gray-900 dark:text-white">
         {value}
       </Text>
     </View>

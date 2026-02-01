@@ -106,7 +106,7 @@ export const ProgramSetRow = memo(
               }`}
             >
               <Text
-                className={`font-primaryBold text-sm ${
+                className={`font-secondarySemiBold text-sm ${
                   isCompleted
                     ? "text-white"
                     : isActive
@@ -141,7 +141,7 @@ export const ProgramSetRow = memo(
               isLast={isLastSet}
               placeholder="—"
               placeholderTextColor="#9ca3af"
-              className={`w-14 h-10 text-center rounded-lg font-primaryBold text-lg ${getInputStyle()}`}
+              className={`w-14 h-10 text-center rounded-lg font-secondarySemiBold text-lg ${getInputStyle()}`}
             />
             <Text className="font-secondary text-gray-400 dark:text-gray-500 text-sm ml-2">
               reps

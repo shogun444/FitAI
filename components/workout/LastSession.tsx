@@ -33,14 +33,14 @@ function LastSessionExercise({ exercise }: { exercise: Exercise }) {
   const completedSets = exercise.sets.filter((s) => s.completed);
 
   return (
-    <View className="mb-3 last:mb-0">
-      <Text className="font-primaryMedium text-sm text-gray-900 dark:text-white mb-1.5">
+    <View className="mb-3  last:mb-0">
+      <Text className="font-secondary text-sm text-gray-900 dark:text-white mb-1.5">
         {exercise.name}
       </Text>
-      <View className="flex-row flex-wrap gap-x-3 gap-y-1">
+      <View className="flex-col   gap-y-1">
         {completedSets.map((set, index) => (
           <Text key={set.id} className="font-secondary text-xs text-gray-500">
-            {formatWeightReps(set.weight, set.reps)}
+            {formatWeightReps(set.weight, set.reps)} reps
           </Text>
         ))}
       </View>
@@ -80,6 +80,7 @@ export function LastSession({ workout }: LastSessionProps) {
           <Text className="font-secondary text-xs text-gray-500 mt-0.5">
             {formatDate(workout.startedAt)} · {formatDuration(workout.duration)}
           </Text>
+          
         </View>
         <Text className="font-secondary text-gray-400 text-sm">
           {isExpanded ? "▼" : "▶"}
@@ -87,7 +88,7 @@ export function LastSession({ workout }: LastSessionProps) {
       </Pressable>
 
       {isExpanded && (
-        <View className="mt-4 py-4 border-t border-gray-100 dark:border-gray-800">
+        <View className="mt-4  py-4 border-t border-gray-200 dark:border-gray-800">
           {exercisesWithSets.map((exercise) => (
             <LastSessionExercise key={exercise.id} exercise={exercise} />
           ))}

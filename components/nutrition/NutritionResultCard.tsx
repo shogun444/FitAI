@@ -25,7 +25,7 @@ export function NutritionResultCard({ result }: NutritionResultCardProps) {
           BMI
         </Text>
         <View className="flex-row items-baseline">
-          <Text className="font-primaryBold text-3xl text-gray-900 dark:text-white">
+          <Text className="font-secondarySemiBold text-3xl text-gray-900 dark:text-white">
             {bmi}
           </Text>
           <Text className="font-secondary text-gray-500 dark:text-gray-400 text-base ml-2">
@@ -42,7 +42,7 @@ export function NutritionResultCard({ result }: NutritionResultCardProps) {
         <Text className="font-secondaryMedium text-gray-700 dark:text-gray-300 text-sm mb-2">
           Daily Protein Recommendation
         </Text>
-        <Text className="font-primaryBold text-2xl text-primary-600">
+        <Text className="font-secondarySemiBold text-2xl text-primary-600">
           {proteinRange.min}–{proteinRange.max}g
         </Text>
         <Text className="font-secondary text-gray-600 dark:text-gray-400 text-sm mt-2">

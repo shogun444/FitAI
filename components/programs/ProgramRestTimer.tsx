@@ -81,7 +81,7 @@ export function ProgramRestTimer({ timer, onDismiss }: ProgramRestTimerProps) {
 
         {/* Timer display */}
         <View className="items-center mb-6">
-          <Text className="font-primaryBold text-6xl text-primary-600">
+          <Text className="font-secondarySemiBold text-6xl text-primary-600">
             {formatTime(remaining)}
           </Text>
           <Text className="font-secondary text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -230,7 +230,7 @@ export function RestTimerIndicator({
 
       {/* Time display */}
       <View className="flex-1">
-        <Text className="font-primaryBold text-white text-xl">
+        <Text className="font-secondarySemiBold text-white text-xl">
           {formattedTime}
         </Text>
         <Text className="font-secondary text-white/80 text-xs">

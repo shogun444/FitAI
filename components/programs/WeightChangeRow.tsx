@@ -42,7 +42,7 @@ export function WeightChangeRow({
       )}
       <View className="flex-row items-center">
         {/* Previous weight - muted */}
-        <Text className="font-secondary text-gray-400 dark:text-gray-500 text-sm">
+        <Text className="font-secondaryMedium text-gray-400 dark:text-gray-500 text-sm">
           {previousWeight} kg
         </Text>
 
@@ -52,7 +52,7 @@ export function WeightChangeRow({
         </Text>
 
         {/* New weight - emphasized */}
-        <Text className="font-primarySemiBold text-gray-900 dark:text-white text-sm">
+        <Text className="font-secondarySemiBold text-gray-900 dark:text-white text-sm">
           {newWeight} kg
         </Text>
 

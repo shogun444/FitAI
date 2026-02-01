@@ -140,7 +140,7 @@ export const SetRow = memo(
           }`}
         >
           <Text
-            className={`font-primaryBold text-sm ${
+            className={`font-secondarySemiBold text-sm ${
               isCompleted && !isEditing
                 ? "text-white"
                 : isEditing
@@ -164,7 +164,7 @@ export const SetRow = memo(
             keyboardType="decimal-pad"
             placeholderTextColor="#9ca3af"
             selectTextOnFocus
-            className={`w-16 h-12 px-2 py-2 text-center rounded-lg font-primaryBold text-lg ${getInputStyle()}`}
+            className={`w-16 h-12 px-2 py-2 text-center rounded-lg font-secondarySemiBold text-lg ${getInputStyle()}`}
           />
           <Text className="font-secondary text-gray-400 dark:text-gray-500 text-xs ml-1">
             kg
@@ -183,7 +183,7 @@ export const SetRow = memo(
             placeholderTextColor="#9ca3af"
             onFocus={handleFocus}
             onBlur={handleBlur}
-            className={`w-16 h-12 px-2 py-2 text-center rounded-lg font-primaryBold text-lg ${getInputStyle()}`}
+            className={`w-16 h-12 px-2 py-2 text-center rounded-lg font-secondarySemiBold text-lg ${getInputStyle()}`}
           />
           <Text className="font-secondary text-gray-400 dark:text-gray-500 text-xs ml-1">
             reps
