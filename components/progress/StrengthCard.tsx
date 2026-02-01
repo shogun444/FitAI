@@ -30,8 +30,8 @@ const ExercisePRItem = memo(function ExercisePRItem({
       </Text>
 
       <View className="flex-row items-center">
-        <Ionicons name="trophy-outline" size={14} color="#c9f158" />
-        <Text className="font-secondaryMedium text-sm text-primary ml-1.5">
+        <Ionicons name="trophy-outline" size={14} color="#65a30d" />
+        <Text className="font-secondaryMedium text-sm text-primary-600 ml-1.5">
           {formatWeightReps(pr.bestSet.weight, pr.bestSet.reps, {
             showRepsSuffix: true,
           })}
@@ -87,8 +87,8 @@ export const StrengthCard = memo(function StrengthCard({
           Strength
         </Text>
         <View className="flex-row items-center bg-primary/20 px-2.5 py-1.5 rounded-full">
-          <Ionicons name="trophy" size={14} color="#c9f158" />
-          <Text className="font-secondaryMedium text-primary text-sm ml-1">
+          <Ionicons name="trophy" size={14} color="#65a30d" />
+          <Text className="font-secondaryMedium text-primary-600 text-sm ml-1">
             {metrics.totalPRCount} PR{metrics.totalPRCount !== 1 ? "s" : ""}
           </Text>
         </View>

@@ -22,7 +22,7 @@ const MetricItem = memo(function MetricItem({
   return (
     <View className="w-1/2 mb-4">
       <View className="flex-row items-center mb-1">
-        <Ionicons name={icon} size={16} color="#c9f158" />
+        <Ionicons name={icon} size={16} color="#65a30d" />
         <Text className="font-secondary text-gray-500 text-xs ml-1.5">
           {label}
         </Text>

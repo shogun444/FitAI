@@ -34,22 +34,21 @@ function LastSessionExercise({ exercise }: { exercise: Exercise }) {
   const completedSets = exercise.sets.filter((s) => s.completed);
 
   return (
-    <Pressable onPress={()=>router.push('/workout/history')}>
-
-   
-    <View className="mb-2">
-      <Text className="font-secondary text-gray-600 dark:text-gray-400 mb-1">
-        • {exercise.name} ({completedSets.length} sets)
-      </Text>
-      {completedSets.map((set, index) => (
-        <Text
-          key={set.id}
-          className="font-secondary text-xs text-gray-500 dark:text-gray-500 ml-4"
-        >
-          {formatSetDisplay(index + 1, set.weight, set.reps)}
+    <Pressable onPress={() => router.push("/workout/history")}>
+      <View className="mb-2">
+        <Text className="font-secondary text-gray-600 dark:text-gray-400 mb-1">
+          • {exercise.name} ({completedSets.length} sets)
         </Text>
-      ))}
-    </View> </Pressable>
+        {completedSets.map((set, index) => (
+          <Text
+            key={set.id}
+            className="font-secondary text-xs text-gray-500 dark:text-gray-500 ml-4"
+          >
+            {formatSetDisplay(index + 1, set.weight, set.reps)}
+          </Text>
+        ))}
+      </View>
+    </Pressable>
   );
 }
 
