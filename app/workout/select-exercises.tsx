@@ -2,7 +2,15 @@ import { Button, Heading, Subheading } from "@/components";
 import { SessionConflictModal } from "@/components/ui";
 import { EXERCISE_CATALOG } from "@/data/exercises";
 import { useSessionGuardWithConfirmation } from "@/hooks/useSessionGuardWithConfirmation";
+import {
+  CATEGORY_LABELS,
+  filterExercises,
+  getCategories,
+  getTrainingTypes,
+  TRAINING_TYPE_LABELS,
+} from "@/lib/exerciseFilters";
 import { useWorkoutStore } from "@/store";
+import { ExerciseCategory, TrainingType } from "@/types";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
@@ -16,10 +24,31 @@ export default function SelectExercisesScreen() {
   const { guardedStartWorkout, modalProps } = useSessionGuardWithConfirmation();
   const [selectedExercises, setSelectedExercises] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategories, setSelectedCategories] = useState<
+    ExerciseCategory[]
+  >([]);
+  const [selectedTrainingType, setSelectedTrainingType] =
+    useState<TrainingType | null>(null);
 
-  const filteredExercises = EXERCISE_CATALOG.filter((e) =>
-    e.name.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  const filteredExercises = filterExercises({
+    categories: selectedCategories,
+    trainingType: selectedTrainingType,
+    searchQuery,
+  });
+
+  const toggleCategory = (category: ExerciseCategory) => {
+    setSelectedCategories((prev) => {
+      if (prev.includes(category)) {
+        // Remove if already selected
+        return prev.filter((c) => c !== category);
+      } else if (prev.length < 2) {
+        // Add if under limit
+        return [...prev, category];
+      }
+      // At limit, replace oldest with new
+      return [prev[1], category];
+    });
+  };
 
   const toggleExercise = (exerciseId: string, exerciseName: string) => {
     setSelectedExercises((prev) => {
@@ -74,10 +103,122 @@ export default function SelectExercisesScreen() {
           className="font-secondary bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white mb-4"
         />
 
+        {/* Category Filter */}
+        <View className="mb-3">
+          <Text className="font-primaryMedium text-sm text-gray-600 dark:text-gray-400 mb-2">
+            Category{" "}
+            <Text className="font-secondary text-xs text-gray-400">
+              (select up to 2)
+            </Text>
+          </Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            className="flex-row"
+          >
+            <Pressable
+              onPress={() => setSelectedCategories([])}
+              className={`px-4 py-2 rounded-full mr-2 ${
+                selectedCategories.length === 0
+                  ? "bg-primary"
+                  : "bg-gray-200 dark:bg-gray-800"
+              }`}
+            >
+              <Text
+                className={`font-secondaryMedium text-sm ${
+                  selectedCategories.length === 0
+                    ? "text-white"
+                    : "text-gray-700 dark:text-gray-300"
+                }`}
+              >
+                All
+              </Text>
+            </Pressable>
+            {getCategories().map((category) => {
+              const isSelected = selectedCategories.includes(category);
+              return (
+                <Pressable
+                  key={category}
+                  onPress={() => toggleCategory(category)}
+                  className={`px-4 py-2 rounded-full mr-2 ${
+                    isSelected ? "bg-primary" : "bg-gray-200 dark:bg-gray-800"
+                  }`}
+                >
+                  <Text
+                    className={`font-secondaryMedium text-sm ${
+                      isSelected
+                        ? "text-white"
+                        : "text-gray-700 dark:text-gray-300"
+                    }`}
+                  >
+                    {CATEGORY_LABELS[category]}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </View>
+
+        {/* Training Type Filter */}
+        <View className="mb-4">
+          <Text className="font-primaryMedium text-sm text-gray-600 dark:text-gray-400 mb-2">
+            Training Style
+          </Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            className="flex-row"
+          >
+            <Pressable
+              onPress={() => setSelectedTrainingType(null)}
+              className={`px-4 py-2 rounded-full mr-2 ${
+                selectedTrainingType === null
+                  ? "bg-primary"
+                  : "bg-gray-200 dark:bg-gray-800"
+              }`}
+            >
+              <Text
+                className={`font-secondaryMedium text-sm ${
+                  selectedTrainingType === null
+                    ? "text-white"
+                    : "text-gray-700 dark:text-gray-300"
+                }`}
+              >
+                All
+              </Text>
+            </Pressable>
+            {getTrainingTypes().map((type) => (
+              <Pressable
+                key={type}
+                onPress={() =>
+                  setSelectedTrainingType(
+                    selectedTrainingType === type ? null : type,
+                  )
+                }
+                className={`px-4 py-2 rounded-full mr-2 ${
+                  selectedTrainingType === type
+                    ? "bg-primary"
+                    : "bg-gray-200 dark:bg-gray-800"
+                }`}
+              >
+                <Text
+                  className={`font-secondaryMedium text-sm ${
+                    selectedTrainingType === type
+                      ? "text-white"
+                      : "text-gray-700 dark:text-gray-300"
+                  }`}
+                >
+                  {TRAINING_TYPE_LABELS[type]}
+                </Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+        </View>
+
         {/* Selected Count */}
         <View className="bg-primary/10 dark:bg-primary/20 rounded-xl p-3 mb-4">
           <Text className="font-secondaryMedium text-gray-900 dark:text-white text-center">
-            Selected: {selectedExercises.length}/{EXERCISE_CATALOG.length}
+            Selected: {selectedExercises.length}/{filteredExercises.length}
           </Text>
         </View>
 
@@ -96,15 +237,30 @@ export default function SelectExercisesScreen() {
                 }`}
               >
                 <View className="flex-row items-center justify-between">
-                  <Text
-                    className={`font-primaryMedium text-base flex-1 ${
-                      isSelected
-                        ? "text-primary font-primarySemiBold"
-                        : "text-gray-900 dark:text-white"
-                    }`}
-                  >
-                    {exercise.name}
-                  </Text>
+                  <View className="flex-1">
+                    <Text
+                      className={`font-primaryMedium text-base ${
+                        isSelected
+                          ? "text-primary font-primarySemiBold"
+                          : "text-gray-900 dark:text-white"
+                      }`}
+                    >
+                      {exercise.name}
+                    </Text>
+                    <View className="flex-row mt-1 gap-2">
+                      <Text className="font-secondary text-xs text-gray-500 dark:text-gray-400 capitalize">
+                        {exercise.category}
+                      </Text>
+                      <Text className="font-secondary text-xs text-gray-400 dark:text-gray-500">
+                        •
+                      </Text>
+                      <Text className="font-secondary text-xs text-gray-500 dark:text-gray-400">
+                        {exercise.trainingTypes
+                          .map((t) => TRAINING_TYPE_LABELS[t])
+                          .join(", ")}
+                      </Text>
+                    </View>
+                  </View>
                   <View
                     className={`w-6 h-6 rounded-full border-2 items-center justify-center ${
                       isSelected

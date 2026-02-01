@@ -1,9 +1,20 @@
 // Workout Data Models
 
+// ============================================
+// Exercise Categories & Training Types
+// ============================================
+
+export type ExerciseCategory = "push" | "pull" | "legs" | "core";
+export type TrainingType = "calisthenics" | "weighted" | "gym";
+
 // Exercise template from catalog
 export interface ExerciseTemplate {
   id: string;
   name: string;
+  category: ExerciseCategory;
+  baseMovement: string;
+  trainingTypes: TrainingType[];
+  allowsExternalLoad: boolean;
 }
 
 export interface WorkoutSet {
