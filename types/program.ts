@@ -95,6 +95,30 @@ export interface ProgramLiftState {
 
 export type ProgramStatus = "active" | "paused" | "completed";
 
+/**
+ * Session status for in-progress workout tracking.
+ * - idle: No session in progress
+ * - in_progress: Session started, user actively working out
+ */
+export type SessionStatus = "idle" | "in_progress";
+
+/**
+ * In-progress session data.
+ * Persisted to allow resume after app kill/navigation.
+ */
+export interface CurrentProgramSession {
+  /** Session index at time of start */
+  sessionIndex: number;
+  /** When session started (timestamp) */
+  startedAt: number;
+  /** Reps recorded per lift (liftId -> array of reps, null = not logged) */
+  repsPerLift: Record<ProgramLiftId, (number | null)[]>;
+  /** Current active lift index */
+  currentLiftIndex: number;
+  /** Current active set index within the lift */
+  currentSetIndex: number;
+}
+
 export interface ProgramInstance {
   id: string;
   programId: string;
@@ -104,6 +128,10 @@ export interface ProgramInstance {
   frequency: number; // Sessions per week (locked at 2)
   status: ProgramStatus;
   history: SessionPerformance[];
+  /** Current in-progress session (null if idle) */
+  currentSession: CurrentProgramSession | null;
+  /** Session status for quick checks */
+  sessionStatus: SessionStatus;
 }
 
 // ============================================

@@ -1,5 +1,6 @@
 // UI Components
 export { Button } from "./ui/Button";
+export { CancelWorkoutModal } from "./ui/CancelWorkoutModal";
 export { Card } from "./ui/Card";
 export { EmptyState } from "./ui/EmptyState";
 export { Heading } from "./ui/Heading";

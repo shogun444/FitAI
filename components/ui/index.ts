@@ -4,10 +4,12 @@ export type {
   AutoAdvanceNumberInputRef,
 } from "./AutoAdvanceNumberInput";
 export { Button } from "./Button";
+export { CancelWorkoutModal } from "./CancelWorkoutModal";
 export { Card } from "./Card";
 export { EmptyState } from "./EmptyState";
 export { Heading } from "./Heading";
 export { NumberInput } from "./NumberInput";
 export { SelectGroup } from "./SelectGroup";
+export { SessionConflictModal } from "./SessionConflictModal";
 export { Subheading } from "./Subheading";
 export { ToggleSwitch } from "./ToggleSwitch";

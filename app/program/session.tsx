@@ -6,6 +6,7 @@ import {
 import {
   AutoAdvanceNumberInputRef,
   Button,
+  CancelWorkoutModal,
   Card,
   Heading,
   Subheading,
@@ -21,7 +22,14 @@ import {
 } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React, { createRef, memo, useCallback, useMemo, useState } from "react";
+import React, {
+  createRef,
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -195,8 +203,14 @@ const LiftCard = memo(function LiftCard({
 // ============================================
 
 export default function ProgramSessionScreen() {
-  const { program, getTodaySession, recordSession, loading } =
-    useProgramInstance();
+  const {
+    program,
+    getTodaySession,
+    recordSession,
+    updateCurrentSession,
+    cancelSession,
+    loading,
+  } = useProgramInstance();
 
   // Global rest timer (shared across all screens)
   const { timer, openModal: openRestTimer } = useGlobalRestTimer();
@@ -210,22 +224,44 @@ export default function ProgramSessionScreen() {
     timer.start();
   };
 
-  // Session progress state
+  // Session progress state - initialized from currentSession if resuming
   const [currentProgress, setCurrentProgress] = useState<LiftProgress>({
-    liftIndex: 0,
-    setIndex: 0,
+    liftIndex: program?.currentSession?.currentLiftIndex ?? 0,
+    setIndex: program?.currentSession?.currentSetIndex ?? 0,
   });
 
   // Reps tracking: liftId -> array of reps per set (null = not logged)
+  // Initialize from currentSession if resuming, otherwise empty
   const [repsPerLift, setRepsPerLift] = useState<
     Record<ProgramLiftId, (number | null)[]>
-  >({
-    "weighted-pullups": [null, null, null, null, null],
-    "weighted-dips": [null, null, null, null, null],
-    squats: [null, null, null, null, null],
-  });
+  >(
+    program?.currentSession?.repsPerLift ?? {
+      "weighted-pullups": [null, null, null, null, null],
+      "weighted-dips": [null, null, null, null, null],
+      squats: [null, null, null, null, null],
+    },
+  );
+
+  // Track if we've initialized from currentSession
+  const [hasInitialized, setHasInitialized] = useState(false);
+
+  // Initialize state from currentSession when program loads (for resume)
+  useEffect(() => {
+    if (!hasInitialized && program?.currentSession) {
+      setRepsPerLift(program.currentSession.repsPerLift);
+      setCurrentProgress({
+        liftIndex: program.currentSession.currentLiftIndex,
+        setIndex: program.currentSession.currentSetIndex,
+      });
+      setHasInitialized(true);
+    } else if (!hasInitialized && program && !program.currentSession) {
+      // Fresh session - already initialized with defaults
+      setHasInitialized(true);
+    }
+  }, [program, hasInitialized]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
   const session = getTodaySession();
 
@@ -256,13 +292,20 @@ export default function ProgramSessionScreen() {
   // Handle reps change for a set
   // State is ALWAYS reversible - clearing reps sets to null, re-entering sets value
   // No locking, no one-way transitions
+  // Also persists to currentSession for resume capability
   const handleRepsChange = useCallback(
     (liftId: ProgramLiftId, setIndex: number, reps: number) => {
       setRepsPerLift((prev) => {
         const newReps = [...prev[liftId]];
         // Derive completion from value: reps > 0 = completed, reps = 0 = not completed
         newReps[setIndex] = reps > 0 ? reps : null;
-        return { ...prev, [liftId]: newReps };
+
+        const updatedRepsPerLift = { ...prev, [liftId]: newReps };
+
+        // Persist to currentSession for resume (fire and forget)
+        updateCurrentSession({ repsPerLift: updatedRepsPerLift });
+
+        return updatedRepsPerLift;
       });
 
       // Auto-advance current progress indicator (but do NOT lock previous inputs)
@@ -276,20 +319,31 @@ export default function ProgramSessionScreen() {
         const isLastLift = currentLiftIndex === session.lifts.length - 1;
 
         // Move active indicator to next set (purely visual)
+        let newProgress: LiftProgress;
         if (!isLastSetOfLift) {
-          setCurrentProgress({
+          newProgress = {
             liftIndex: currentLiftIndex,
             setIndex: setIndex + 1,
-          });
+          };
         } else if (!isLastLift) {
-          setCurrentProgress({
+          newProgress = {
             liftIndex: currentLiftIndex + 1,
             setIndex: 0,
-          });
+          };
+        } else {
+          newProgress = currentProgress;
         }
+
+        setCurrentProgress(newProgress);
+
+        // Persist progress position for resume
+        updateCurrentSession({
+          currentLiftIndex: newProgress.liftIndex,
+          currentSetIndex: newProgress.setIndex,
+        });
       }
     },
-    [session],
+    [session, currentProgress, updateCurrentSession],
   );
 
   // Handle session finish
@@ -322,6 +376,28 @@ export default function ProgramSessionScreen() {
     }
   }, [session, program, repsPerLift, recordSession]);
 
+  // Handle cancel session - show confirmation modal
+  const handleCancelSession = useCallback(() => {
+    setShowCancelModal(true);
+  }, []);
+
+  // Confirm cancel and discard session
+  const handleConfirmCancel = useCallback(async () => {
+    setShowCancelModal(false);
+    // Reset global rest timer
+    timer.reset();
+    // Clear session state
+    await cancelSession();
+    // Navigate back
+    router.replace("/(tabs)");
+  }, [cancelSession, timer]);
+
+  // Handle back navigation - just go back without canceling (supports resume)
+  const handleBack = useCallback(() => {
+    // Session state is already persisted, just navigate back
+    router.back();
+  }, []);
+
   // Loading state
   if (loading || !program || !session) {
     return (
@@ -340,7 +416,7 @@ export default function ProgramSessionScreen() {
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900">
       {/* Header */}
       <View className="flex-row items-center px-4 py-3 border-b border-gray-100 dark:border-gray-800">
-        <TouchableOpacity onPress={() => router.back()} className="p-2 -ml-2">
+        <TouchableOpacity onPress={handleBack} className="p-2 -ml-2">
           <Ionicons name="arrow-back" size={24} color="#6b7280" />
         </TouchableOpacity>
         <View className="flex-1 ml-2">
@@ -445,7 +521,12 @@ export default function ProgramSessionScreen() {
       </ScrollView>
 
       {/* Bottom action */}
-      <View className="px-4 py-4 border-t border-gray-100 dark:border-gray-800">
+      <View className="px-4 py-4 border-t border-gray-100 dark:border-gray-800 gap-3">
+        <Button
+          title="Cancel Workout"
+          variant="secondary"
+          onPress={handleCancelSession}
+        />
         <Button
           title={isSubmitting ? "Saving..." : "Finish Session"}
           onPress={handleFinishSession}
@@ -453,11 +534,18 @@ export default function ProgramSessionScreen() {
           className={!allSetsCompleted ? "opacity-50" : ""}
         />
         {!allSetsCompleted && (
-          <Text className="font-secondary text-gray-400 dark:text-gray-500 text-xs text-center mt-2">
+          <Text className="font-secondary text-gray-400 dark:text-gray-500 text-xs text-center">
             Complete all sets to finish session
           </Text>
         )}
       </View>
+
+      {/* Cancel Workout Confirmation Modal */}
+      <CancelWorkoutModal
+        visible={showCancelModal}
+        onKeepWorking={() => setShowCancelModal(false)}
+        onConfirmCancel={handleConfirmCancel}
+      />
     </SafeAreaView>
   );
 }

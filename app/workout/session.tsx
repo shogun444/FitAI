@@ -1,4 +1,4 @@
-import { Button, Heading, Subheading } from "@/components";
+import { Button, CancelWorkoutModal, Heading, Subheading } from "@/components";
 import { InlineRestTimer } from "@/components/programs";
 import { AddExerciseForm, ExerciseItem } from "@/components/workout";
 import { useGlobalRestTimer } from "@/contexts/RestTimerContext";
@@ -6,6 +6,7 @@ import { useWorkoutTimer } from "@/hooks/useWorkoutTimer";
 import { useWorkoutStore } from "@/store";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -13,6 +14,7 @@ export default function WorkoutSessionScreen() {
   const router = useRouter();
   const { currentWorkout, endWorkout, cancelWorkout } = useWorkoutStore();
   const { timer, openModal: openRestTimer } = useGlobalRestTimer();
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
   const { formattedTime } = useWorkoutTimer({
     startTime: currentWorkout?.startedAt ?? Date.now(),
@@ -27,7 +29,15 @@ export default function WorkoutSessionScreen() {
     router.replace("/workout/summary");
   };
 
+  // Show cancel confirmation modal
   const handleCancelWorkout = () => {
+    setShowCancelModal(true);
+  };
+
+  // Confirm cancel and discard workout
+  const handleConfirmCancel = () => {
+    setShowCancelModal(false);
+    timer.reset(); // Reset global rest timer
     cancelWorkout();
     router.replace("/");
   };
@@ -95,6 +105,13 @@ export default function WorkoutSessionScreen() {
           />
         </View>
       </ScrollView>
+
+      {/* Cancel Workout Confirmation Modal */}
+      <CancelWorkoutModal
+        visible={showCancelModal}
+        onKeepWorking={() => setShowCancelModal(false)}
+        onConfirmCancel={handleConfirmCancel}
+      />
     </SafeAreaView>
   );
 }

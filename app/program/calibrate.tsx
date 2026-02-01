@@ -2,7 +2,14 @@ import {
   CalibrationSummaryCard,
   LiftCalibrationCard,
 } from "@/components/programs";
-import { Button, Card, Heading, Subheading } from "@/components/ui";
+import {
+  Button,
+  Card,
+  Heading,
+  SessionConflictModal,
+  Subheading,
+} from "@/components/ui";
+import { useSessionGuardWithConfirmation } from "@/hooks/useSessionGuardWithConfirmation";
 import { calibrateLift } from "@/lib/programRules";
 import { saveProgram } from "@/lib/programStorage";
 import {
@@ -28,6 +35,7 @@ type Step = "input" | "summary";
 
 export default function CalibrateScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { guardedStartWorkout, modalProps } = useSessionGuardWithConfirmation();
   const [step, setStep] = useState<Step>("input");
 
   // Calibration inputs for each lift
@@ -81,28 +89,33 @@ export default function CalibrateScreen() {
   }, [inputs]);
 
   const handleConfirm = useCallback(async () => {
-    // Create initial lift states from calibration results
-    const lifts: ProgramLiftState[] = results.map((result) => ({
-      liftId: result.liftId,
-      currentWeight: result.startingWeight,
-      lastPerformance: null,
-    }));
+    // Use guarded start to check for active sessions (free workouts)
+    guardedStartWorkout(async () => {
+      // Create initial lift states from calibration results
+      const lifts: ProgramLiftState[] = results.map((result) => ({
+        liftId: result.liftId,
+        currentWeight: result.startingWeight,
+        lastPerformance: null,
+      }));
 
-    // Create program instance
-    const program: ProgramInstance = {
-      id: `instance-${Date.now()}`,
-      programId: id || "weighted-calisthenics-5x5",
-      startDate: Date.now(),
-      sessionIndex: 1,
-      lifts,
-      frequency: 2,
-      status: "active",
-      history: [],
-    };
+      // Create program instance with session state
+      const program: ProgramInstance = {
+        id: `instance-${Date.now()}`,
+        programId: id || "weighted-calisthenics-5x5",
+        startDate: Date.now(),
+        sessionIndex: 1,
+        lifts,
+        frequency: 2,
+        status: "active",
+        history: [],
+        currentSession: null,
+        sessionStatus: "idle",
+      };
 
-    await saveProgram(program);
-    router.replace("/(tabs)");
-  }, [id, results]);
+      await saveProgram(program);
+      router.replace("/(tabs)");
+    });
+  }, [id, results, guardedStartWorkout]);
 
   const handleBack = useCallback(() => {
     if (step === "summary") {
@@ -118,6 +131,9 @@ export default function CalibrateScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900">
+      {/* Session Conflict Modal */}
+      <SessionConflictModal {...modalProps} />
+
       {/* Header */}
       <View className="flex-row items-center px-4 py-3 border-b border-gray-100 dark:border-gray-800">
         <TouchableOpacity onPress={handleBack} className="p-2 -ml-2">

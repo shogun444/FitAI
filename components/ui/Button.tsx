@@ -3,7 +3,7 @@ import { Pressable, Text } from "react-native";
 type ButtonProps = {
   title: string;
   onPress?: () => void;
-  variant?: "primary" | "secondary";
+  variant?: "primary" | "secondary" | "danger";
   disabled?: boolean;
   className?: string;
 };
@@ -20,12 +20,16 @@ export function Button({
 
   const variantStyles = {
     primary: "bg-primary",
-    secondary: "border border-gray-200 dark:border-gray-800 bg-surface dark:bg-surface-dark",
+    secondary:
+      "border border-gray-200 dark:border-gray-800 bg-surface dark:bg-surface-dark",
+    danger: "bg-red-500",
   };
 
   const textStyles = {
     primary: "font-secondaryMedium text-background-dark text-center text-base",
-    secondary: "font-secondaryMedium text-gray-900 dark:text-white text-center text-base",
+    secondary:
+      "font-secondaryMedium text-gray-900 dark:text-white text-center text-base",
+    danger: "font-secondaryMedium text-white text-center text-base",
   };
 
   return (

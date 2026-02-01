@@ -1,5 +1,7 @@
 import { Button, Heading, Subheading } from "@/components";
+import { SessionConflictModal } from "@/components/ui";
 import { EXERCISE_CATALOG } from "@/data/exercises";
+import { useSessionGuardWithConfirmation } from "@/hooks/useSessionGuardWithConfirmation";
 import { useWorkoutStore } from "@/store";
 import { useRouter } from "expo-router";
 import { useState } from "react";
@@ -11,6 +13,7 @@ const MIN_EXERCISES_REQUIRED = 2;
 export default function SelectExercisesScreen() {
   const router = useRouter();
   const { startWorkout, addExercise } = useWorkoutStore();
+  const { guardedStartWorkout, modalProps } = useSessionGuardWithConfirmation();
   const [selectedExercises, setSelectedExercises] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -30,19 +33,22 @@ export default function SelectExercisesScreen() {
 
   const handleStartWorkout = () => {
     if (selectedExercises.length >= MIN_EXERCISES_REQUIRED) {
-      // Start the workout
-      startWorkout();
+      // Use guarded start to check for active sessions
+      guardedStartWorkout(() => {
+        // Start the workout
+        startWorkout();
 
-      // Add selected exercises to the workout
-      selectedExercises.forEach((exerciseId) => {
-        const exercise = EXERCISE_CATALOG.find((e) => e.id === exerciseId);
-        if (exercise) {
-          addExercise(exercise.name);
-        }
+        // Add selected exercises to the workout
+        selectedExercises.forEach((exerciseId) => {
+          const exercise = EXERCISE_CATALOG.find((e) => e.id === exerciseId);
+          if (exercise) {
+            addExercise(exercise.name);
+          }
+        });
+
+        // Navigate to workout session
+        router.push("/workout/session");
       });
-
-      // Navigate to workout session
-      router.push("/workout/session");
     }
   };
 
@@ -50,6 +56,9 @@ export default function SelectExercisesScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background-light dark:bg-background-dark">
+      {/* Session Conflict Modal */}
+      <SessionConflictModal {...modalProps} />
+
       <ScrollView className="flex-1 p-4">
         <Heading className="mb-2">Select Exercises</Heading>
         <Subheading className="mb-4">
