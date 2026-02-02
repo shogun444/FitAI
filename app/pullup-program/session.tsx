@@ -7,10 +7,14 @@ import {
   SessionHeader,
   SetInput,
   TargetGoalCard,
+  TimeExerciseSession,
 } from "@/components";
 import { InlineRestTimer } from "@/components/programs";
 import { useGlobalRestTimer } from "@/contexts/RestTimerContext";
-import { PULLUP_PROGRAM } from "@/data/pullup-program";
+import {
+  PULLUP_PROGRAM,
+  PULLUP_PROGRAM_EXERCISES,
+} from "@/data/pullup-program";
 import { usePullupProgram } from "@/hooks/usePullupProgram";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -122,18 +126,57 @@ export default function PullupProgramSessionScreen() {
   }, [inputText, hookInputValue, saveSetAndAdvance, timer]);
 
   const handleComplete = useCallback(async () => {
-    if (!inputText || hookInputValue === null) return;
+    if (!inputText || hookInputValue === null || !activeSession) return;
 
     timer.reset();
 
+    // Save final set and complete
     const result = await completeSession();
+
+    // Build exercise summary data for the summary page
+    // Note: completeSession adds the final set, so we need to include it
+    const currentExIdx = activeSession.currentExerciseIndex;
+    const exerciseData = activeSession.exercises.map((ex, idx) => {
+      const sets = [...ex.sets];
+      // Add the final set that completeSession just saved
+      if (idx === currentExIdx) {
+        const isTimeExercise =
+          PULLUP_PROGRAM_EXERCISES[idx]?.targetType === "time";
+        sets.push({
+          setIndex: activeSession.currentSetIndex,
+          ...(isTimeExercise
+            ? { timeCompleted: hookInputValue }
+            : { repsCompleted: hookInputValue }),
+        });
+      }
+      return {
+        name: PULLUP_PROGRAM_EXERCISES[idx]?.name ?? `Exercise ${idx + 1}`,
+        sets: sets.map((s) => ({
+          reps: s.repsCompleted,
+          time: s.timeCompleted,
+        })),
+      };
+    });
 
     if (result?.programCompleted) {
       router.replace("/pullup-program/complete" as any);
     } else {
-      router.replace("/pullup-program" as any);
+      router.replace({
+        pathname: "/pullup-program/summary" as any,
+        params: {
+          sessionNumber: activeSession.sessionNumber.toString(),
+          exerciseData: JSON.stringify(exerciseData),
+        },
+      });
     }
-  }, [inputText, hookInputValue, completeSession, router, timer]);
+  }, [
+    inputText,
+    hookInputValue,
+    activeSession,
+    completeSession,
+    router,
+    timer,
+  ]);
 
   const handleCancel = useCallback(() => {
     setShowCancelModal(true);
@@ -172,10 +215,82 @@ export default function PullupProgramSessionScreen() {
 
   const inputType = currentExercise.targetType === "time" ? "time" : "reps";
   const canProceed = inputText.length > 0 && hookInputValue !== null;
+  const isTimeBasedExercise = currentExercise.targetType === "time";
 
   // Build exercise progress indicator
   const exerciseProgress = `Exercise ${currentExerciseIndex + 1} of ${totalExercises}`;
   const sessionLabel = `Session ${activeSession?.sessionNumber ?? 1}`;
+
+  // ============================================
+  // TIME-BASED EXERCISE FLOW (e.g., Dead Hangs)
+  // ============================================
+  if (isTimeBasedExercise) {
+    const handleTimeComplete = async (timeCompleted: number) => {
+      // Save the time as the set value and advance
+      const result = await saveSetAndAdvance(timeCompleted);
+
+      if (result.sessionComplete && result.finalSession) {
+        // Complete the session using the final session from saveSetAndAdvance
+        timer.reset();
+        const completeResult = await completeSession(true, result.finalSession);
+
+        // Build exercise summary data for the summary page
+        const exerciseData = result.finalSession.exercises.map((ex, idx) => ({
+          name: PULLUP_PROGRAM_EXERCISES[idx]?.name ?? `Exercise ${idx + 1}`,
+          sets: ex.sets.map((s) => ({
+            reps: s.repsCompleted,
+            time: s.timeCompleted,
+          })),
+        }));
+
+        if (completeResult?.programCompleted) {
+          router.replace("/pullup-program/complete" as any);
+        } else {
+          router.replace({
+            pathname: "/pullup-program/summary" as any,
+            params: {
+              sessionNumber: result.finalSession.sessionNumber.toString(),
+              exerciseData: JSON.stringify(exerciseData),
+            },
+          });
+        }
+        return;
+      }
+
+      // Start rest timer after completing a set
+      timer.reset();
+      timer.start();
+    };
+
+    return (
+      <>
+        <TimeExerciseSession
+          programName={PULLUP_PROGRAM.name}
+          exerciseName={currentExercise.name}
+          formCues={currentExercise.instructions}
+          defaultDuration={currentExercise.targetValue}
+          allowedDurations={[5, 10, 15, 20, 25, 30]}
+          currentSet={currentSetIndex + 1}
+          totalSets={totalSetsForExercise}
+          isLastSet={isLastSetOfSession}
+          targetTime={currentExercise.targetValue}
+          media={currentExercise.media}
+          completedSets={currentSets}
+          onComplete={handleTimeComplete}
+          onCancel={handleCancel}
+        />
+        <CancelWorkoutModal
+          visible={showCancelModal}
+          onKeepWorking={() => setShowCancelModal(false)}
+          onConfirmCancel={handleConfirmCancel}
+        />
+      </>
+    );
+  }
+
+  // ============================================
+  // REPS-BASED EXERCISE FLOW (default)
+  // ============================================
 
   return (
     <SafeAreaView className="flex-1 bg-background-light dark:bg-background-dark">

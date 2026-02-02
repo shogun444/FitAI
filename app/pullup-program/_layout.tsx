@@ -14,6 +14,7 @@ export default function PullupProgramLayout() {
     >
       <Stack.Screen name="index" />
       <Stack.Screen name="session" />
+      <Stack.Screen name="summary" />
       <Stack.Screen name="complete" />
     </Stack>
   );

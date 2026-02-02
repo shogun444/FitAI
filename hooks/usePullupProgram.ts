@@ -193,76 +193,85 @@ export function usePullupProgram() {
   /**
    * Save the current set and advance to next set.
    * If all sets for current exercise are done, advance to next exercise.
-   * Returns: { advancedExercise: boolean, sessionComplete: boolean }
+   * @param directValue - Optional value to use directly (for time-based exercises)
+   * Returns: { advancedExercise: boolean, sessionComplete: boolean, finalSession?: ActivePullupSession }
    */
-  const saveSetAndAdvance = useCallback(async () => {
-    if (!activeSession || inputValue === null || !currentExercise) {
-      return { advancedExercise: false, sessionComplete: false };
-    }
+  const saveSetAndAdvance = useCallback(
+    async (directValue?: number) => {
+      const valueToSave = directValue ?? inputValue;
+      if (!activeSession || valueToSave === null || !currentExercise) {
+        return { advancedExercise: false, sessionComplete: false };
+      }
 
-    const isTimeInput = currentExercise.targetType === "time";
-    const currentExIdx = activeSession.currentExerciseIndex;
-    const currentSetIdx = activeSession.currentSetIndex;
-    const totalSetsForExercise = currentExercise.setsPerSession;
+      const isTimeInput = currentExercise.targetType === "time";
+      const currentExIdx = activeSession.currentExerciseIndex;
+      const currentSetIdx = activeSession.currentSetIndex;
+      const totalSetsForExercise = currentExercise.setsPerSession;
 
-    // Create the completed set
-    const completedSet: PullupSet = {
-      setIndex: currentSetIdx,
-      ...(isTimeInput
-        ? { timeCompleted: inputValue }
-        : { repsCompleted: inputValue }),
-    };
-
-    // Update the exercise's sets
-    const updatedExercises = [...activeSession.exercises];
-    updatedExercises[currentExIdx] = {
-      ...updatedExercises[currentExIdx],
-      sets: [...updatedExercises[currentExIdx].sets, completedSet],
-    };
-
-    const nextSetIndex = currentSetIdx + 1;
-    const isLastSetOfExercise = nextSetIndex >= totalSetsForExercise;
-    const isLastExercise = currentExIdx >= totalExercises - 1;
-
-    let updatedSession: ActivePullupSession;
-
-    if (isLastSetOfExercise && isLastExercise) {
-      // Session is complete - will be handled by completeSession
-      // Just save the final set
-      updatedSession = {
-        ...activeSession,
-        exercises: updatedExercises,
-        currentSetIndex: nextSetIndex,
+      // Create the completed set
+      const completedSet: PullupSet = {
+        setIndex: currentSetIdx,
+        ...(isTimeInput
+          ? { timeCompleted: valueToSave }
+          : { repsCompleted: valueToSave }),
       };
-      await saveActiveSession(updatedSession);
-      setActiveSession(updatedSession);
-      setInputValue(null);
-      return { advancedExercise: false, sessionComplete: true };
-    } else if (isLastSetOfExercise) {
-      // Advance to next exercise
-      updatedSession = {
-        ...activeSession,
-        exercises: updatedExercises,
-        currentExerciseIndex: currentExIdx + 1,
-        currentSetIndex: 0,
+
+      // Update the exercise's sets
+      const updatedExercises = [...activeSession.exercises];
+      updatedExercises[currentExIdx] = {
+        ...updatedExercises[currentExIdx],
+        sets: [...updatedExercises[currentExIdx].sets, completedSet],
       };
-      await saveActiveSession(updatedSession);
-      setActiveSession(updatedSession);
-      setInputValue(null);
-      return { advancedExercise: true, sessionComplete: false };
-    } else {
-      // Advance to next set of same exercise
-      updatedSession = {
-        ...activeSession,
-        exercises: updatedExercises,
-        currentSetIndex: nextSetIndex,
-      };
-      await saveActiveSession(updatedSession);
-      setActiveSession(updatedSession);
-      setInputValue(null);
-      return { advancedExercise: false, sessionComplete: false };
-    }
-  }, [activeSession, inputValue, currentExercise, totalExercises]);
+
+      const nextSetIndex = currentSetIdx + 1;
+      const isLastSetOfExercise = nextSetIndex >= totalSetsForExercise;
+      const isLastExercise = currentExIdx >= totalExercises - 1;
+
+      let updatedSession: ActivePullupSession;
+
+      if (isLastSetOfExercise && isLastExercise) {
+        // Session is complete - return the final session for completeSession to use
+        updatedSession = {
+          ...activeSession,
+          exercises: updatedExercises,
+          currentSetIndex: nextSetIndex,
+        };
+        await saveActiveSession(updatedSession);
+        setActiveSession(updatedSession);
+        setInputValue(null);
+        // Return the final session so completeSession can use the updated data
+        return {
+          advancedExercise: false,
+          sessionComplete: true,
+          finalSession: updatedSession,
+        };
+      } else if (isLastSetOfExercise) {
+        // Advance to next exercise
+        updatedSession = {
+          ...activeSession,
+          exercises: updatedExercises,
+          currentExerciseIndex: currentExIdx + 1,
+          currentSetIndex: 0,
+        };
+        await saveActiveSession(updatedSession);
+        setActiveSession(updatedSession);
+        setInputValue(null);
+        return { advancedExercise: true, sessionComplete: false };
+      } else {
+        // Advance to next set of same exercise
+        updatedSession = {
+          ...activeSession,
+          exercises: updatedExercises,
+          currentSetIndex: nextSetIndex,
+        };
+        await saveActiveSession(updatedSession);
+        setActiveSession(updatedSession);
+        setInputValue(null);
+        return { advancedExercise: false, sessionComplete: false };
+      }
+    },
+    [activeSession, inputValue, currentExercise, totalExercises],
+  );
 
   /**
    * Remove a specific completed set by index from current exercise.
@@ -306,51 +315,84 @@ export function usePullupProgram() {
   /**
    * Complete the entire session.
    * Records to history and clears active session.
+   *
+   * Two modes:
+   * 1. Finalize-only (finalSetAlreadySaved=true): Session data already complete, pass finalSession
+   * 2. Save-and-finalize (finalSetAlreadySaved=false): Save final set, then finalize
    */
-  const completeSession = useCallback(async () => {
-    if (!activeSession || inputValue === null || !currentExercise) {
-      return null;
-    }
+  const completeSession = useCallback(
+    async (
+      finalSetAlreadySaved = false,
+      providedSession?: ActivePullupSession,
+    ) => {
+      // Use provided session (from saveSetAndAdvance) or fall back to state
+      const sessionToUse = providedSession ?? activeSession;
 
-    const isTimeInput = currentExercise.targetType === "time";
-    const currentExIdx = activeSession.currentExerciseIndex;
+      if (!sessionToUse) {
+        return null;
+      }
 
-    // Save the final set
-    const finalSet: PullupSet = {
-      setIndex: activeSession.currentSetIndex,
-      ...(isTimeInput
-        ? { timeCompleted: inputValue }
-        : { repsCompleted: inputValue }),
-    };
+      let finalSession: ActivePullupSession;
 
-    // Update final exercise's sets
-    const updatedExercises = [...activeSession.exercises];
-    updatedExercises[currentExIdx] = {
-      ...updatedExercises[currentExIdx],
-      sets: [...updatedExercises[currentExIdx].sets, finalSet],
-      completedAt: Date.now(),
-    };
+      if (finalSetAlreadySaved) {
+        // Session already has all sets saved (time-based flow)
+        // Just mark the final exercise as completed
+        const updatedExercises = sessionToUse.exercises.map((ex) => ({
+          ...ex,
+          completedAt: ex.completedAt ?? Date.now(),
+        }));
+        finalSession = {
+          ...sessionToUse,
+          exercises: updatedExercises,
+        };
+      } else {
+        // Need to save the final set (reps-based flow)
+        if (inputValue === null || !currentExercise) {
+          return null;
+        }
 
-    const finalSession: ActivePullupSession = {
-      ...activeSession,
-      exercises: updatedExercises,
-    };
+        const isTimeInput = currentExercise.targetType === "time";
+        const currentExIdx = sessionToUse.currentExerciseIndex;
 
-    // Record to history
-    const updatedProgress = await recordCompletedSession(finalSession);
+        // Save the final set
+        const finalSet: PullupSet = {
+          setIndex: sessionToUse.currentSetIndex,
+          ...(isTimeInput
+            ? { timeCompleted: inputValue }
+            : { repsCompleted: inputValue }),
+        };
 
-    // Clear active session
-    await clearActiveSession();
+        // Update final exercise's sets
+        const updatedExercises = [...sessionToUse.exercises];
+        updatedExercises[currentExIdx] = {
+          ...updatedExercises[currentExIdx],
+          sets: [...updatedExercises[currentExIdx].sets, finalSet],
+          completedAt: Date.now(),
+        };
 
-    setProgress(updatedProgress);
-    setActiveSession(null);
-    setInputValue(null);
+        finalSession = {
+          ...sessionToUse,
+          exercises: updatedExercises,
+        };
+      }
 
-    return {
-      progress: updatedProgress,
-      programCompleted: updatedProgress.isCompleted,
-    };
-  }, [activeSession, inputValue, currentExercise]);
+      // Record to history (this saves to unified workout history via adapter)
+      const updatedProgress = await recordCompletedSession(finalSession);
+
+      // Clear active session
+      await clearActiveSession();
+
+      setProgress(updatedProgress);
+      setActiveSession(null);
+      setInputValue(null);
+
+      return {
+        progress: updatedProgress,
+        programCompleted: updatedProgress.isCompleted,
+      };
+    },
+    [activeSession, inputValue, currentExercise],
+  );
 
   // ============================================
   // Derived State for UI

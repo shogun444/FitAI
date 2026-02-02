@@ -12,6 +12,7 @@
  * - SetInput: Input field for reps/time
  * - CompletedSetsList: List of completed sets with remove
  * - SessionActions: Next Set / Complete Session buttons
+ * - TimeExerciseSession: Full session flow for time-based exercises
  */
 
 export { CompletedSetsList } from "./CompletedSetsList";
@@ -21,3 +22,4 @@ export { SessionActions } from "./SessionActions";
 export { SessionHeader } from "./SessionHeader";
 export { SetInput } from "./SetInput";
 export { TargetGoalCard } from "./TargetGoalCard";
+export { TimeExerciseSession } from "./TimeExerciseSession";
