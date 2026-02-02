@@ -1,8 +1,13 @@
 import { Button, Card, Heading, Subheading } from "@/components";
-import { ActiveProgramCard, ProgramCard } from "@/components/programs";
+import {
+  ActiveProgramCard,
+  ActivePullupProgramCard,
+  ProgramCard,
+} from "@/components/programs";
 import { LastSession } from "@/components/workout";
 import { PROGRAMS } from "@/data/programs";
 import { useProgramInstance } from "@/hooks/useProgramInstance";
+import { usePullupProgram } from "@/hooks/usePullupProgram";
 import { useWorkoutStore } from "@/store";
 import { Href, Link, useRouter } from "expo-router";
 import { useEffect, useMemo } from "react";
@@ -18,6 +23,16 @@ export default function HomeScreen() {
     getTodaySession,
     hasActiveProgram,
   } = useProgramInstance();
+
+  // Pull-up program state
+  const {
+    hasStarted: hasPullupProgram,
+    isCompleted: isPullupCompleted,
+    completedSessionsCount,
+    targetSessions,
+    hasActiveSession: hasPullupActiveSession,
+    isLoading: pullupLoading,
+  } = usePullupProgram();
 
   useEffect(() => {
     loadWorkouts();
@@ -50,9 +65,18 @@ export default function HomeScreen() {
         </Subheading>
 
         <View className="gap-4">
-          {/* Active Program Section */}
+          {/* Active Program Section - Weighted Calisthenics */}
           {hasActiveProgram && program && todaySession && (
             <ActiveProgramCard program={program} todaySession={todaySession} />
+          )}
+
+          {/* Active Program Section - Pull-up Program */}
+          {hasPullupProgram && !isPullupCompleted && !pullupLoading && (
+            <ActivePullupProgramCard
+              completedSessions={completedSessionsCount}
+              targetSessions={targetSessions}
+              hasActiveSession={hasPullupActiveSession}
+            />
           )}
 
           {currentWorkout ? (
@@ -105,7 +129,7 @@ export default function HomeScreen() {
               {pastWorkouts.length !== 1 ? "s" : ""} completed
             </Text>
 
-            {lastSession && <LastSession  workout={lastSession} />}
+            {lastSession && <LastSession workout={lastSession} />}
           </View>
         )}
       </ScrollView>

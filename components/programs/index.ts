@@ -1,4 +1,5 @@
 export { ActiveProgramCard } from "./ActiveProgramCard";
+export { ActivePullupProgramCard } from "./ActivePullupProgramCard";
 export { CalibrationSummaryCard } from "./CalibrationSummaryCard";
 export { InlineRestTimer } from "./InlineRestTimer";
 export { LiftCalibrationCard } from "./LiftCalibrationCard";
