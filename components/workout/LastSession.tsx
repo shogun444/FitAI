@@ -1,5 +1,6 @@
 import { Card } from "@/components/ui/Card";
 import { EXERCISE_CATALOG } from "@/data/exercises";
+import { PULLUP_PROGRAM_EXERCISES } from "@/data/pullup-program";
 import { formatSetDisplay } from "@/lib/formatters";
 import { Exercise, WorkoutSession } from "@/types";
 import { router } from "expo-router";
@@ -11,10 +12,24 @@ import { Pressable, Text, View } from "react-native";
 // ============================================
 
 function isBodyweightExercise(exerciseName: string): boolean {
+  // Check if it's a pullup program exercise (all are bodyweight)
+  const pullupExercise = PULLUP_PROGRAM_EXERCISES.find(
+    (e) => e.name.toLowerCase() === exerciseName.toLowerCase(),
+  );
+  if (pullupExercise) return true;
+
+  // Check catalog exercises
   const catalogExercise = EXERCISE_CATALOG.find(
     (e) => e.name.toLowerCase() === exerciseName.toLowerCase(),
   );
   return catalogExercise?.allowsExternalLoad === false;
+}
+
+function isTimeExercise(exerciseName: string): boolean {
+  const pullupExercise = PULLUP_PROGRAM_EXERCISES.find(
+    (e) => e.name.toLowerCase() === exerciseName.toLowerCase(),
+  );
+  return pullupExercise?.targetType === "time";
 }
 
 function formatDate(timestamp: number): string {
@@ -41,6 +56,7 @@ function formatDuration(seconds: number): string {
 function LastSessionExercise({ exercise }: { exercise: Exercise }) {
   const completedSets = exercise.sets.filter((s) => s.completed);
   const isBodyweight = isBodyweightExercise(exercise.name);
+  const isTime = isTimeExercise(exercise.name);
 
   return (
     <Pressable onPress={() => router.push("/workout/history")}>
@@ -55,6 +71,7 @@ function LastSessionExercise({ exercise }: { exercise: Exercise }) {
           >
             {formatSetDisplay(index + 1, set.weight, set.reps, {
               isBodyweight,
+              isTimeExercise: isTime,
             })}
           </Text>
         ))}

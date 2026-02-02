@@ -18,20 +18,24 @@ interface FormatWeightRepsOptions {
   defaultWeight?: number;
   /** Fallback for null/undefined reps (default: 0) */
   defaultReps?: number;
-  /** If true, format as bodyweight (reps only) */
+  /** If true, format as bodyweight exercise */
   isBodyweight?: boolean;
+  /** If true, value represents time in seconds */
+  isTimeExercise?: boolean;
 }
 
 /**
  * Formats weight and reps in the standard domain order: WEIGHT → REPS
- * For bodyweight exercises, shows reps only.
+ * For bodyweight exercises, shows "BW × {reps}".
+ * For time-based exercises, shows "BW × {time}s".
  *
  * @example
  * formatWeightReps(30, 5)                          // "30 kg × 5"
  * formatWeightReps(30, 5, { showRepsSuffix: true }) // "30 kg × 5 reps"
  * formatWeightReps(null, null)                     // "0 kg × 0"
- * formatWeightReps(0, 5, { isBodyweight: true })   // "5 reps"
- * formatWeightReps(null, 8, { isBodyweight: true }) // "8 reps"
+ * formatWeightReps(0, 5, { isBodyweight: true })   // "BW × 5"
+ * formatWeightReps(null, 8, { isBodyweight: true }) // "BW × 8"
+ * formatWeightReps(null, 30, { isBodyweight: true, isTimeExercise: true }) // "BW × 30s"
  */
 export function formatWeightReps(
   weight: number | null | undefined,
@@ -43,13 +47,17 @@ export function formatWeightReps(
     defaultWeight = 0,
     defaultReps = 0,
     isBodyweight = false,
+    isTimeExercise = false,
   } = options;
 
   const r = reps ?? defaultReps;
 
-  // Bodyweight exercises: show reps only
+  // Bodyweight exercises: show BW × value
   if (isBodyweight) {
-    return `${r} reps`;
+    if (isTimeExercise) {
+      return `BW × ${r}s`;
+    }
+    return `BW × ${r}`;
   }
 
   const w = weight ?? defaultWeight;
@@ -79,17 +87,18 @@ export function formatPreviousPerformance(
 
 /**
  * Formats a set display for history/summary contexts.
- * Standard format: "Set {n}: {weight} kg × {reps}" or "Set {n}: {reps} reps" (bodyweight)
+ * Standard format: "Set {n}: {weight} kg × {reps}" or "Set {n}: BW × {reps}" (bodyweight)
  *
  * @example
  * formatSetDisplay(1, 30, 5)                          // "Set 1: 30 kg × 5"
- * formatSetDisplay(1, null, 10, { isBodyweight: true }) // "Set 1: 10 reps"
+ * formatSetDisplay(1, null, 10, { isBodyweight: true }) // "Set 1: BW × 10"
+ * formatSetDisplay(1, null, 30, { isBodyweight: true, isTimeExercise: true }) // "Set 1: BW × 30s"
  */
 export function formatSetDisplay(
   setNumber: number,
   weight: number | null | undefined,
   reps: number | null | undefined,
-  options: { isBodyweight?: boolean } = {},
+  options: { isBodyweight?: boolean; isTimeExercise?: boolean } = {},
 ): string {
-  return `Set ${setNumber}: ${formatWeightReps(weight, reps, { isBodyweight: options.isBodyweight })}`;
+  return `Set ${setNumber}: ${formatWeightReps(weight, reps, { isBodyweight: options.isBodyweight, isTimeExercise: options.isTimeExercise })}`;
 }

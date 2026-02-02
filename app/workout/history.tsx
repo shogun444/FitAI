@@ -1,5 +1,6 @@
 import { Card, Heading, Subheading } from "@/components";
 import { EXERCISE_CATALOG } from "@/data/exercises";
+import { PULLUP_PROGRAM_EXERCISES } from "@/data/pullup-program";
 import { formatSetDisplay } from "@/lib/formatters";
 import { useWorkoutStore } from "@/store";
 import { WorkoutSession } from "@/types";
@@ -7,12 +8,27 @@ import { useEffect } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-// Helper to check if an exercise is bodyweight from catalog
+// Helper to check if an exercise is bodyweight from catalog or pullup program
 function isBodyweightExercise(exerciseName: string): boolean {
+  // Check if it's a pullup program exercise (all are bodyweight)
+  const pullupExercise = PULLUP_PROGRAM_EXERCISES.find(
+    (e) => e.name.toLowerCase() === exerciseName.toLowerCase(),
+  );
+  if (pullupExercise) return true;
+
+  // Check catalog exercises
   const catalogExercise = EXERCISE_CATALOG.find(
     (e) => e.name.toLowerCase() === exerciseName.toLowerCase(),
   );
   return catalogExercise?.allowsExternalLoad === false;
+}
+
+// Helper to check if an exercise is time-based
+function isTimeExercise(exerciseName: string): boolean {
+  const pullupExercise = PULLUP_PROGRAM_EXERCISES.find(
+    (e) => e.name.toLowerCase() === exerciseName.toLowerCase(),
+  );
+  return pullupExercise?.targetType === "time";
 }
 
 function formatDuration(seconds: number): string {
@@ -91,6 +107,7 @@ function WorkoutCard({ workout }: { workout: WorkoutSession }) {
         <View className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
           {workout.exercises.map((ex) => {
             const isBodyweight = isBodyweightExercise(ex.name);
+            const isTime = isTimeExercise(ex.name);
             return (
               <View key={ex.id} className="mb-2">
                 <Text className="font-secondary text-gray-600 dark:text-gray-400 mb-1">
@@ -103,6 +120,7 @@ function WorkoutCard({ workout }: { workout: WorkoutSession }) {
                   >
                     {formatSetDisplay(idx + 1, set.weight, set.reps, {
                       isBodyweight,
+                      isTimeExercise: isTime,
                     })}
                   </Text>
                 ))}
