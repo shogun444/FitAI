@@ -5,6 +5,8 @@ import {
   PullupProgramProgress,
 } from "@/types/pullup-program";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { mapPullupSessionToHistory } from "./programHistoryAdapter";
+import { saveWorkout } from "./storage";
 
 const STORAGE_KEY = "pullup-program-progress-v2";
 const ACTIVE_SESSION_KEY = "active_pullup_session_v2";
@@ -98,6 +100,15 @@ export async function recordCompletedSession(
   }
 
   await savePullupProgress(progress);
+
+  // ============================================
+  // SAVE TO UNIFIED WORKOUT HISTORY
+  // ============================================
+  // Convert program session to WorkoutSession format and save
+  // to the same history as free workouts for a single source of truth.
+  const workoutHistoryEntry = mapPullupSessionToHistory(session);
+  await saveWorkout(workoutHistoryEntry);
+
   return progress;
 }
 

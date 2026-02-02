@@ -6,6 +6,10 @@
  */
 
 import {
+  PULLUP_PROGRAM,
+  PULLUP_PROGRAM_EXERCISES,
+} from "@/data/pullup-program";
+import {
   Exercise,
   LiftPerformance,
   PrescribedLift,
@@ -13,6 +17,7 @@ import {
   WorkoutSession,
   WorkoutSet,
 } from "@/types";
+import { ActivePullupSession } from "@/types/pullup-program";
 import * as Crypto from "expo-crypto";
 
 interface RecordedLift {
@@ -109,4 +114,65 @@ function generateProgressionSummary(
   } else {
     return "Session completed";
   }
+}
+
+// ============================================
+// PULLUP PROGRAM ADAPTER
+// ============================================
+
+/**
+ * Maps a completed pullup program session to a WorkoutSession for unified history.
+ *
+ * ARCHITECTURE:
+ * - One history for ALL workouts (free + program)
+ * - Reuses existing WorkoutSession shape
+ * - No separate storage path for program sessions
+ * - History UI displays program sessions identically to free workouts
+ *
+ * @param session - The completed active session with all exercise data
+ * @returns WorkoutSession ready for storage via saveWorkout()
+ */
+export function mapPullupSessionToHistory(
+  session: ActivePullupSession,
+): WorkoutSession {
+  const endTime = Date.now();
+  const duration = Math.floor((endTime - session.startedAt) / 1000);
+
+  // Convert each exercise's sets to the WorkoutSession format
+  const exercises: Exercise[] = session.exercises.map((exerciseData, index) => {
+    const exerciseDefinition = PULLUP_PROGRAM_EXERCISES[index];
+
+    const sets: WorkoutSet[] = exerciseData.sets.map((set, setIdx) => ({
+      id: Crypto.randomUUID(),
+      reps: set.repsCompleted ?? null,
+      weight: null, // Bodyweight exercises
+      completed: true,
+      isDefault: false,
+      createdAt: endTime,
+      // Store time as reps for time-based exercises (UI handles display)
+      ...(set.timeCompleted !== undefined && { reps: set.timeCompleted }),
+    }));
+
+    return {
+      id: Crypto.randomUUID(),
+      name: exerciseDefinition?.name ?? `Exercise ${index + 1}`,
+      sets,
+      createdAt: session.startedAt,
+    };
+  });
+
+  return {
+    id: Crypto.randomUUID(),
+    exercises,
+    startedAt: session.startedAt,
+    endedAt: endTime,
+    duration: duration > 0 ? duration : 0,
+
+    // Program-specific metadata
+    isProgramWorkout: true,
+    programId: PULLUP_PROGRAM.id,
+    programName: PULLUP_PROGRAM.name,
+    sessionIndex: session.sessionNumber,
+    progressionSummary: `Session ${session.sessionNumber} of ${PULLUP_PROGRAM.targetSessions}`,
+  };
 }
