@@ -2,7 +2,8 @@ import { Button, Card, Heading, Subheading } from "@/components";
 import { PULLUP_PROGRAM } from "@/data/pullup-program";
 import { usePullupProgram } from "@/hooks/usePullupProgram";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback } from "react";
 import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -27,11 +28,20 @@ export default function PullupProgramOverviewScreen() {
     getSessionsCompleted,
     getSessionsRemaining,
     getAllExerciseProgress,
+    getCurrentExerciseProgress,
     resetProgram,
+    refresh,
     currentSetIndex,
     totalSets,
     completedSets,
   } = usePullupProgram();
+
+  // Refresh data when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      refresh();
+    }, [refresh]),
+  );
 
   if (isLoading) {
     return (
@@ -98,6 +108,23 @@ export default function PullupProgramOverviewScreen() {
       ? `Set ${currentSetIndex + 1} of ${totalSets}${completedSets.length > 0 ? ` (${completedSets.length} completed)` : ""}`
       : null;
 
+    // Get last completed workout for this exercise
+    const exerciseProgressData = getCurrentExerciseProgress();
+    const lastSession =
+      exerciseProgressData?.sessionHistory?.[
+        exerciseProgressData.sessionHistory.length - 1
+      ];
+
+    // Determine which sets to display:
+    // 1. If there's an active session with completed sets, show those
+    // 2. Otherwise, if there's a last session, show those sets
+    const displaySets = hasInProgressSession
+      ? completedSets
+      : (lastSession?.sets ?? []);
+
+    const inputType = currentExercise.targetType === "time" ? "time" : "reps";
+    const unit = inputType === "time" ? "sec" : "reps";
+
     return (
       <SafeAreaView className="flex-1 bg-background-light dark:bg-background-dark">
         <ScrollView className="flex-1 p-4">
@@ -142,6 +169,30 @@ export default function PullupProgramOverviewScreen() {
               )}
             </View>
 
+            {/* Display sets from active session or last workout */}
+            {displaySets.length > 0 && (
+              <View className="bg-gray-100 dark:bg-gray-800 rounded-lg p-3 mb-4">
+                <Text className="font-secondaryMedium text-gray-600 dark:text-gray-400 mb-2">
+                  {hasInProgressSession ? "Completed Sets" : "Last Workout"}
+                </Text>
+                <View className="flex-row flex-wrap gap-2">
+                  {displaySets.map((set, idx) => {
+                    const value = set.repsCompleted ?? set.timeCompleted ?? 0;
+                    return (
+                      <View
+                        key={idx}
+                        className="bg-green-500/20 px-3 py-1.5 rounded-full"
+                      >
+                        <Text className="font-secondaryMedium text-green-600 dark:text-green-400 text-sm">
+                          Set {set.setIndex + 1}: {value} {unit}
+                        </Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              </View>
+            )}
+
             <Button
               title={
                 hasInProgressSession ? "Continue Session" : "Start Session"
@@ -156,49 +207,82 @@ export default function PullupProgramOverviewScreen() {
           </Text>
 
           {exerciseProgress.map(
-            ({ exercise, completedSessions, isUnlocked, isComplete }) => (
-              <Card key={exercise.id} className="mb-2">
-                <View className="flex-row items-center">
-                  <View
-                    className={`w-8 h-8 rounded-full items-center justify-center mr-3 ${
-                      isComplete
-                        ? "bg-green-500"
-                        : isUnlocked
-                          ? "bg-primary"
-                          : "bg-gray-300 dark:bg-gray-700"
-                    }`}
-                  >
-                    {isComplete ? (
-                      <Ionicons name="checkmark" size={18} color="#fff" />
-                    ) : (
-                      <Text
-                        className={`font-secondarySemiBold text-sm ${
-                          isUnlocked ? "text-black" : "text-gray-500"
-                        }`}
-                      >
-                        {completedSessions}/{exercise.sessionsRequired}
-                      </Text>
-                    )}
-                  </View>
-                  <View className="flex-1">
-                    <Text
-                      className={`font-primaryMedium ${
-                        isUnlocked
-                          ? "text-gray-900 dark:text-white"
-                          : "text-gray-400"
+            ({
+              exercise,
+              completedSessions,
+              isUnlocked,
+              isComplete,
+              sessionHistory,
+            }) => {
+              // Get the last session for this exercise (if any)
+              const lastSession = sessionHistory?.[sessionHistory.length - 1];
+              const lastSets = lastSession?.sets ?? [];
+              const exerciseUnit =
+                exercise.targetType === "time" ? "sec" : "reps";
+
+              return (
+                <Card key={exercise.id} className="mb-2">
+                  <View className="flex-row items-center">
+                    <View
+                      className={`w-8 h-8 rounded-full items-center justify-center mr-3 ${
+                        isComplete
+                          ? "bg-green-500"
+                          : isUnlocked
+                            ? "bg-primary"
+                            : "bg-gray-300 dark:bg-gray-700"
                       }`}
                     >
-                      {exercise.name}
-                    </Text>
-                    {!isUnlocked && (
-                      <Text className="font-secondary text-xs text-gray-400">
-                        Locked
+                      {isComplete ? (
+                        <Ionicons name="checkmark" size={18} color="#fff" />
+                      ) : (
+                        <Text
+                          className={`font-secondarySemiBold text-sm ${
+                            isUnlocked ? "text-black" : "text-gray-500"
+                          }`}
+                        >
+                          {completedSessions}/{exercise.sessionsRequired}
+                        </Text>
+                      )}
+                    </View>
+                    <View className="flex-1">
+                      <Text
+                        className={`font-primaryMedium ${
+                          isUnlocked || isComplete
+                            ? "text-gray-900 dark:text-white"
+                            : "text-gray-400"
+                        }`}
+                      >
+                        {exercise.name}
                       </Text>
-                    )}
+                      {!isUnlocked && !isComplete && (
+                        <Text className="font-secondary text-xs text-gray-400">
+                          Locked
+                        </Text>
+                      )}
+                      {/* Show last workout sets if available */}
+                      {lastSets.length > 0 && (
+                        <View className="flex-row flex-wrap gap-1 mt-1">
+                          {lastSets.map((set, idx) => {
+                            const value =
+                              set.repsCompleted ?? set.timeCompleted ?? 0;
+                            return (
+                              <Text
+                                key={idx}
+                                className="font-secondary text-xs text-gray-500"
+                              >
+                                {idx > 0 ? " • " : ""}
+                                {value}
+                                {exerciseUnit}
+                              </Text>
+                            );
+                          })}
+                        </View>
+                      )}
+                    </View>
                   </View>
-                </View>
-              </Card>
-            ),
+                </Card>
+              );
+            },
           )}
         </ScrollView>
       </SafeAreaView>

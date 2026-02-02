@@ -50,20 +50,19 @@ export function usePullupProgram() {
   // Load Progress & Active Session on Mount
   // ============================================
 
-  useEffect(() => {
-    async function load() {
-      const [loadedProgress, loadedSession] = await Promise.all([
-        loadPullupProgress(),
-        loadActiveSession(),
-      ]);
-      setProgress(loadedProgress);
-      if (loadedSession) {
-        setActiveSession(loadedSession);
-      }
-      setIsLoading(false);
-    }
-    load();
+  const refresh = useCallback(async () => {
+    const [loadedProgress, loadedSession] = await Promise.all([
+      loadPullupProgress(),
+      loadActiveSession(),
+    ]);
+    setProgress(loadedProgress);
+    setActiveSession(loadedSession);
+    setIsLoading(false);
   }, []);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
   // ============================================
   // Derived State
@@ -326,7 +325,12 @@ export function usePullupProgram() {
     return PULLUP_PROGRAM_EXERCISES.map((exercise, index) => {
       const exerciseProgress = progress?.exerciseProgress[exercise.id];
       const completedSessions = exerciseProgress?.completedSessions ?? 0;
-      const isUnlocked = index <= (progress?.currentExerciseIndex ?? 0);
+      // Exercise is unlocked if:
+      // 1. We haven't started (index 0 is unlocked by default)
+      // 2. Index is at or before current exercise index
+      // 3. Program is completed (all exercises are unlocked)
+      const isUnlocked =
+        isCompleted || index <= (progress?.currentExerciseIndex ?? 0);
       const isComplete = completedSessions >= exercise.sessionsRequired;
 
       return {
@@ -335,6 +339,7 @@ export function usePullupProgram() {
         isUnlocked,
         isComplete,
         isCurrent: index === currentExerciseIndex && !isCompleted,
+        sessionHistory: exerciseProgress?.sessionHistory ?? [],
       };
     });
   }, [progress, currentExerciseIndex, isCompleted]);
@@ -381,6 +386,7 @@ export function usePullupProgram() {
     // Program actions
     startProgram,
     resetProgram,
+    refresh,
 
     // Session actions
     startSession,
