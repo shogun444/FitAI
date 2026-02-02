@@ -14,5 +14,6 @@ export { EmptyState } from "./ui/EmptyState";
 
 // Re-export domain components for convenience
 export * from "./feedback";
+export * from "./guided-session";
 export * from "./progress";
 export * from "./workout";

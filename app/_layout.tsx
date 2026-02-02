@@ -107,7 +107,9 @@ function RootLayoutContent() {
   // Hide floating timer indicator on session pages (they have their own trigger button)
   // The timer STILL works - just the floating indicator is hidden to avoid visual clutter
   const isSessionPage =
-    pathname === "/program/session" || pathname === "/workout/session";
+    pathname === "/program/session" ||
+    pathname === "/workout/session" ||
+    pathname === "/pullup-program/session";
 
   return (
     <View className="flex-1">
@@ -115,6 +117,7 @@ function RootLayoutContent() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="workout" options={{ headerShown: false }} />
         <Stack.Screen name="program" options={{ headerShown: false }} />
+        <Stack.Screen name="pullup-program" options={{ headerShown: false }} />
         <Stack.Screen
           name="modal"
           options={{ presentation: "modal", title: "Modal" }}
