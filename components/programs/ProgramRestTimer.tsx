@@ -1,6 +1,13 @@
 import { UseRestTimerReturn } from "@/hooks/useRestTimer";
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, Text, TouchableOpacity, View } from "react-native";
+import {
+  Dimensions,
+  Pressable,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 // ============================================
 // Helpers
@@ -10,6 +17,83 @@ function formatTime(seconds: number): string {
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
   return `${mins}:${secs.toString().padStart(2, "0")}`;
+}
+
+// ============================================
+// Circular Timer Display
+// ============================================
+
+interface CircularTimerDisplayProps {
+  /** Remaining time formatted string */
+  timeDisplay: string;
+  /** Progress value from 0 to 100 */
+  progress: number;
+  /** Status text to show below time */
+  statusText: string;
+  /** Size of the circle in pixels */
+  size: number;
+}
+
+/**
+ * Circular timer display with progress ring.
+ * Uses View-based approach without external dependencies.
+ * Progress is shown as a ring border that "fills" as time passes.
+ */
+function CircularTimerDisplay({
+  timeDisplay,
+  progress,
+  statusText,
+  size,
+}: CircularTimerDisplayProps) {
+  const borderWidth = 6;
+  const innerSize = size - borderWidth * 2;
+
+  return (
+    <View
+      style={{ width: size, height: size }}
+      className="items-center justify-center"
+    >
+      {/* Outer ring - background */}
+      <View
+        style={{
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          borderWidth: borderWidth,
+          borderColor: "rgba(255, 255, 255, 0.2)",
+        }}
+        className="absolute"
+      />
+      {/* Progress indicator - uses opacity to show progress */}
+      <View
+        style={{
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          borderWidth: borderWidth,
+          borderColor: "white",
+          opacity: 1 - progress / 100,
+        }}
+        className="absolute"
+      />
+      {/* Inner circle with content */}
+      <View
+        style={{
+          width: innerSize,
+          height: innerSize,
+          borderRadius: innerSize / 2,
+        }}
+        className="bg-white/10 items-center justify-center"
+      >
+        <Text className="font-secondarySemiBold text-6xl text-white">
+          {timeDisplay}
+        </Text>
+        <Text className="font-secondary text-white/70 text-sm mt-2">
+          {statusText}
+        </Text>
+      </View>
+    </View>
+  );
 }
 
 // ============================================
@@ -53,97 +137,83 @@ export function ProgramRestTimer({ timer, onDismiss }: ProgramRestTimerProps) {
     isAtMaxDuration,
   } = timer;
 
+  // Calculate circle size based on screen width
+  const screenWidth = Dimensions.get("window").width;
+  const circleSize = Math.min(screenWidth - 80, 280);
+
   return (
-    <View className="flex-1 justify-center">
-      {/* Backdrop - tap to dismiss (does NOT stop timer) */}
-      <TouchableOpacity
-        activeOpacity={1}
-        onPress={onDismiss}
-        className="absolute inset-0 bg-gray-900/80"
-      />
+    <SafeAreaView className="flex-1 bg-primary-500">
+      {/* Close button - top right, below safe area */}
+      <View className="flex-row justify-end mx-4 ">
+        <Pressable
+          onPress={onDismiss}
+          className="w-12 h-12 rounded-full bg-white/20 items-center justify-center"
+        >
+          <Ionicons name="close" size={24} color="white" />
+        </Pressable>
+      </View>
 
-      {/* Modal content */}
-      <View className="bg-white dark:bg-gray-800 rounded-2xl p-6 mx-4 shadow-lg">
-        {/* Header */}
-        <View className="flex-row items-center justify-between mb-4">
-          <Text className="font-primarySemiBold text-lg text-gray-900 dark:text-white">
-            Rest Timer
-          </Text>
-          <Pressable
-            onPress={onDismiss}
-            className="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 rounded-lg"
-          >
-            <Text className="font-secondaryMedium text-sm text-gray-600 dark:text-gray-300">
-              {isRunning ? "Minimize" : "Close"}
-            </Text>
-          </Pressable>
-        </View>
-
-        {/* Timer display */}
-        <View className="items-center mb-6">
-          <Text className="font-secondarySemiBold text-6xl text-primary-600">
-            {formatTime(remaining)}
-          </Text>
-          <Text className="font-secondary text-sm text-gray-500 dark:text-gray-400 mt-1">
-            {isRunning
-              ? "Resting... (tap outside to minimize)"
-              : `Set to ${formatTime(duration)}`}
-          </Text>
-        </View>
-
-        {/* Progress bar */}
-        <View className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden mb-6">
-          <View
-            className="h-full bg-primary-500 rounded-full"
-            style={{ width: `${progress}%` }}
+      {/* Main content - centered */}
+      <View className="flex-1 items-center justify-center px-6">
+        {/* Circular timer display */}
+        <TouchableOpacity activeOpacity={1} onPress={onDismiss}>
+          <CircularTimerDisplay
+            timeDisplay={formatTime(remaining)}
+            progress={progress}
+            statusText={
+              isRunning
+                ? "Please catch a breath"
+                : hasStarted
+                  ? "Paused"
+                  : `Set to ${formatTime(duration)}`
+            }
+            size={circleSize}
           />
-        </View>
+        </TouchableOpacity>
 
         {/* Duration adjustment (only when not started) */}
         {!hasStarted && (
-          <View className="flex-row items-center justify-center gap-4 mb-6">
+          <View className="flex-row items-center justify-center gap-6 mt-8">
             <Pressable
               onPress={decreaseDuration}
               disabled={isAtMinDuration}
-              className={`w-12 h-12 rounded-full items-center justify-center ${
-                isAtMinDuration
-                  ? "bg-gray-100 dark:bg-gray-800"
-                  : "bg-gray-200 dark:bg-gray-700"
+              className={`w-14 h-14 rounded-full items-center justify-center ${
+                isAtMinDuration ? "bg-white/10" : "bg-white/20"
               }`}
             >
               <Ionicons
                 name="remove"
-                size={24}
-                color={isAtMinDuration ? "#d1d5db" : "#6b7280"}
+                size={28}
+                color={isAtMinDuration ? "rgba(255,255,255,0.3)" : "white"}
               />
             </Pressable>
-            <Text className="font-secondaryMedium text-gray-600 dark:text-gray-300 text-sm w-16 text-center">
+            <Text className="font-secondaryMedium text-white text-lg w-20 text-center">
               {formatTime(duration)}
             </Text>
             <Pressable
               onPress={increaseDuration}
               disabled={isAtMaxDuration}
-              className={`w-12 h-12 rounded-full items-center justify-center ${
-                isAtMaxDuration
-                  ? "bg-gray-100 dark:bg-gray-800"
-                  : "bg-gray-200 dark:bg-gray-700"
+              className={`w-14 h-14 rounded-full items-center justify-center ${
+                isAtMaxDuration ? "bg-white/10" : "bg-white/20"
               }`}
             >
               <Ionicons
                 name="add"
-                size={24}
-                color={isAtMaxDuration ? "#d1d5db" : "#6b7280"}
+                size={28}
+                color={isAtMaxDuration ? "rgba(255,255,255,0.3)" : "white"}
               />
             </Pressable>
           </View>
         )}
+      </View>
 
-        {/* Control buttons */}
+      {/* Bottom controls */}
+      <View className="px-6 pb-12">
         <View className="flex-row gap-3">
           {isRunning ? (
             <Pressable
               onPress={pause}
-              className="flex-1 bg-yellow-500 rounded-xl py-3.5"
+              className="flex-1 bg-white/20 rounded-xl py-4"
             >
               <Text className="font-secondaryMedium text-white text-center text-base">
                 Pause
@@ -152,29 +222,29 @@ export function ProgramRestTimer({ timer, onDismiss }: ProgramRestTimerProps) {
           ) : (
             <Pressable
               onPress={start}
-              className="flex-1 bg-primary-500 rounded-xl py-3.5"
+              className="flex-1 bg-white rounded-xl py-4"
             >
-              <Text className="font-secondaryMedium text-white text-center text-base">
+              <Text className="font-secondaryMedium text-primary-600 text-center text-base">
                 {hasStarted && remaining < duration ? "Resume" : "Start"}
               </Text>
             </Pressable>
           )}
           <Pressable
             onPress={reset}
-            className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-xl py-3.5"
+            className="flex-1 bg-white/20 rounded-xl py-4"
           >
-            <Text className="font-secondaryMedium text-gray-900 dark:text-white text-center text-base">
+            <Text className="font-secondaryMedium text-white text-center text-base">
               Reset
             </Text>
           </Pressable>
         </View>
 
         {/* Hint text */}
-        <Text className="font-secondary text-xs text-gray-400 dark:text-gray-500 text-center mt-4">
-          Timer continues running when minimized
+        <Text className="font-secondary text-xs text-white/50 text-center mt-4">
+          Tap anywhere or X to minimize • Timer continues running
         </Text>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
