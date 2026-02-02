@@ -1,20 +1,21 @@
+import { PULLUP_PROGRAM } from "@/data/pullup-program";
 import {
+  ActivePullupSession,
+  CompletedPullupSession,
   PullupProgramProgress,
-  PullupSession,
-  PullupSet,
 } from "@/types/pullup-program";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const STORAGE_KEY = "pullup-program-progress";
+const STORAGE_KEY = "pullup-program-progress-v2";
+const ACTIVE_SESSION_KEY = "active_pullup_session_v2";
 
 /**
  * Storage layer for "Unlock Your First Pull-up" program.
  *
- * Persists:
- * - Current exercise index
- * - Completed sessions per exercise
- * - Session history
- * - Program completion status
+ * NEW MODEL (v2):
+ * - Program-level session tracking
+ * - No per-exercise counters
+ * - Full session persistence
  */
 
 // ============================================
@@ -23,8 +24,10 @@ const STORAGE_KEY = "pullup-program-progress";
 
 export function createDefaultProgress(): PullupProgramProgress {
   return {
-    currentExerciseIndex: 0,
-    exerciseProgress: {},
+    programId: "unlock-first-pullup",
+    targetSessions: PULLUP_PROGRAM.targetSessions,
+    completedSessions: 0,
+    sessionHistory: [],
     isCompleted: false,
     startedAt: Date.now(),
     lastSessionAt: null,
@@ -64,12 +67,8 @@ export async function savePullupProgress(
 // Record Session Completion
 // ============================================
 
-export async function recordPullupSession(
-  exerciseId: string,
-  value: number,
-  sets: PullupSet[],
-  sessionsRequired: number,
-  totalExercises: number,
+export async function recordCompletedSession(
+  session: ActivePullupSession,
 ): Promise<PullupProgramProgress> {
   let progress = await loadPullupProgress();
 
@@ -77,40 +76,25 @@ export async function recordPullupSession(
     progress = createDefaultProgress();
   }
 
-  // Create session record
-  const session: PullupSession = {
-    id: `${exerciseId}-${Date.now()}`,
-    exerciseId,
-    value,
-    sets,
+  // Create completed session record
+  const completedSession: CompletedPullupSession = {
+    sessionId: session.sessionId,
+    sessionNumber: session.sessionNumber,
+    exercises: session.exercises.map((ex) => ({
+      ...ex,
+      completedAt: Date.now(),
+    })),
     completedAt: Date.now(),
   };
 
-  // Initialize exercise progress if needed
-  if (!progress.exerciseProgress[exerciseId]) {
-    progress.exerciseProgress[exerciseId] = {
-      completedSessions: 0,
-      sessionHistory: [],
-    };
-  }
-
-  // Add session and increment count
-  progress.exerciseProgress[exerciseId].sessionHistory.push(session);
-  progress.exerciseProgress[exerciseId].completedSessions += 1;
+  // Update progress
+  progress.sessionHistory.push(completedSession);
+  progress.completedSessions += 1;
   progress.lastSessionAt = Date.now();
 
-  // Check if should advance to next exercise
-  const completedSessions =
-    progress.exerciseProgress[exerciseId].completedSessions;
-  if (completedSessions >= sessionsRequired) {
-    // Advance to next exercise
-    const nextIndex = progress.currentExerciseIndex + 1;
-    if (nextIndex >= totalExercises) {
-      // Program complete!
-      progress.isCompleted = true;
-    } else {
-      progress.currentExerciseIndex = nextIndex;
-    }
+  // Check if program is complete
+  if (progress.completedSessions >= progress.targetSessions) {
+    progress.isCompleted = true;
   }
 
   await savePullupProgress(progress);
@@ -124,27 +108,15 @@ export async function recordPullupSession(
 export async function resetPullupProgress(): Promise<void> {
   try {
     await AsyncStorage.removeItem(STORAGE_KEY);
+    await AsyncStorage.removeItem(ACTIVE_SESSION_KEY);
   } catch (error) {
     console.error("Failed to reset pullup program progress:", error);
   }
 }
 
 // ============================================
-// Check if Program Started
-// ============================================
-
-export async function hasPullupProgramStarted(): Promise<boolean> {
-  const progress = await loadPullupProgress();
-  return progress !== null;
-}
-
-// ============================================
 // Active Session Persistence
 // ============================================
-
-import { ActivePullupSession } from "@/types/pullup-program";
-
-const ACTIVE_SESSION_KEY = "active_pullup_session";
 
 /**
  * Load persisted active session.
@@ -163,7 +135,7 @@ export async function loadActiveSession(): Promise<ActivePullupSession | null> {
 
 /**
  * Persist active session to storage.
- * Called on: session start, set completion, navigation to next set.
+ * Called on: session start, set completion, exercise advancement.
  */
 export async function saveActiveSession(
   session: ActivePullupSession,

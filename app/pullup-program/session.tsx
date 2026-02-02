@@ -28,25 +28,31 @@ import { SafeAreaView } from "react-native-safe-area-context";
 /**
  * Session Screen for "Unlock Your First Pull-up"
  *
- * Uses reusable guided-session components for consistent UI.
+ * NEW MODEL (v2):
+ * - Every session includes ALL exercises
+ * - User completes sets for each exercise in order
+ * - Session completes when all exercises are done
  */
 export default function PullupProgramSessionScreen() {
   const router = useRouter();
   const {
-    currentExercise,
     activeSession,
     hasActiveSession,
     isLoading,
+    currentExercise,
+    currentExerciseIndex,
+    totalExercises,
+    currentSetIndex,
+    totalSetsForExercise,
+    currentSets,
+    isLastSet,
+    isLastSetOfSession,
     startSession,
     updateSessionValue,
     cancelSession,
     saveSetAndAdvance,
     removeCompletedSet,
     completeSession,
-    currentSetIndex,
-    totalSets,
-    completedSets,
-    isLastSet,
     inputValue: hookInputValue,
   } = usePullupProgram();
 
@@ -56,13 +62,14 @@ export default function PullupProgramSessionScreen() {
   // ============================================
   // Rest Timer Setup (1 minute between sets)
   // ============================================
-  const REST_DURATION_SECONDS = 60; // 1 minute rest
+  const REST_DURATION_SECONDS = 60;
   const { timer, openModal: openTimerModal } = useGlobalRestTimer();
   const timerInitialized = useRef(false);
 
-  // Initialize timer duration on mount
   useEffect(() => {
-    if (!timerInitialized.current) {
+    // Only set duration if timer hasn't been initialized AND isn't currently running
+    // This prevents resetting an active timer when navigating back to this screen
+    if (!timerInitialized.current && !timer.isRunning && !timer.hasStarted) {
       timer.setDuration(REST_DURATION_SECONDS);
       timerInitialized.current = true;
     }
@@ -79,13 +86,12 @@ export default function PullupProgramSessionScreen() {
 
   // ============================================
   // Start Session on Mount (if not already active)
-  // Wait for loading to complete before deciding to start a new session
   // ============================================
   useEffect(() => {
-    if (!isLoading && !hasActiveSession && currentExercise) {
+    if (!isLoading && !hasActiveSession) {
       startSession();
     }
-  }, [isLoading, hasActiveSession, currentExercise, startSession]);
+  }, [isLoading, hasActiveSession, startSession]);
 
   // ============================================
   // Handlers
@@ -103,33 +109,28 @@ export default function PullupProgramSessionScreen() {
   const handleNextSet = useCallback(async () => {
     if (!inputText || hookInputValue === null) return;
 
-    const success = await saveSetAndAdvance();
-    if (success) {
-      setInputText("");
-      // Start rest timer after completing a set
-      timer.reset();
-      timer.start();
+    const result = await saveSetAndAdvance();
+
+    if (result.sessionComplete) {
+      // Don't advance - let user click "Complete Session"
+      return;
     }
+
+    setInputText("");
+    timer.reset();
+    timer.start();
   }, [inputText, hookInputValue, saveSetAndAdvance, timer]);
 
   const handleComplete = useCallback(async () => {
     if (!inputText || hookInputValue === null) return;
 
-    // Stop timer when completing session
     timer.reset();
 
     const result = await completeSession();
 
     if (result?.programCompleted) {
-      // Program finished - go to completion screen
       router.replace("/pullup-program/complete" as any);
-    } else if (result?.advanced) {
-      // Advanced to next exercise - reset input and start new session automatically
-      setInputText("");
-      // The session will auto-start via useEffect since hasActiveSession becomes false
-      // and currentExercise changes to the next one
     } else {
-      // Same exercise (shouldn't happen with sessionsRequired: 1)
       router.replace("/pullup-program" as any);
     }
   }, [inputText, hookInputValue, completeSession, router, timer]);
@@ -140,7 +141,7 @@ export default function PullupProgramSessionScreen() {
 
   const handleConfirmCancel = useCallback(() => {
     setShowCancelModal(false);
-    timer.reset(); // Stop timer when cancelling
+    timer.reset();
     cancelSession();
     router.replace("/pullup-program" as any);
   }, [cancelSession, router, timer]);
@@ -159,7 +160,7 @@ export default function PullupProgramSessionScreen() {
     );
   }
 
-  if (isLoading || !hasActiveSession || totalSets === 0) {
+  if (isLoading || !hasActiveSession) {
     return (
       <SafeAreaView className="flex-1 bg-background-light dark:bg-background-dark items-center justify-center p-4">
         <Text className="font-secondary text-gray-500">
@@ -171,6 +172,10 @@ export default function PullupProgramSessionScreen() {
 
   const inputType = currentExercise.targetType === "time" ? "time" : "reps";
   const canProceed = inputText.length > 0 && hookInputValue !== null;
+
+  // Build exercise progress indicator
+  const exerciseProgress = `Exercise ${currentExerciseIndex + 1} of ${totalExercises}`;
+  const sessionLabel = `Session ${activeSession?.sessionNumber ?? 1}`;
 
   return (
     <SafeAreaView className="flex-1 bg-background-light dark:bg-background-dark">
@@ -184,15 +189,21 @@ export default function PullupProgramSessionScreen() {
             contentContainerStyle={{ flexGrow: 1 }}
             keyboardShouldPersistTaps="handled"
           >
-            {/* Header */}
+            {/* Header with session and exercise progress */}
+            <View className="px-4 pt-4 pb-2">
+              <Text className="font-secondary text-primary text-sm">
+                {sessionLabel} • {exerciseProgress}
+              </Text>
+            </View>
+
             <SessionHeader
               programName={PULLUP_PROGRAM.name}
               exerciseName={currentExercise.name}
               currentSet={currentSetIndex + 1}
-              totalSets={totalSets}
+              totalSets={totalSetsForExercise}
             />
 
-            {/* Rest Timer (shows when active) */}
+            {/* Rest Timer */}
             <View className="mx-4">
               <InlineRestTimer timer={timer} onExpand={openTimerModal} />
             </View>
@@ -222,16 +233,16 @@ export default function PullupProgramSessionScreen() {
                 inputType={inputType}
               />
 
-              {/* Completed Sets */}
+              {/* Completed Sets for current exercise */}
               <CompletedSetsList
-                completedSets={completedSets}
+                completedSets={currentSets}
                 inputType={inputType}
                 onRemoveSet={removeCompletedSet}
               />
 
               {/* Actions */}
               <SessionActions
-                isLastSet={isLastSet}
+                isLastSet={isLastSetOfSession}
                 canProceed={canProceed}
                 onNextSet={handleNextSet}
                 onComplete={handleComplete}
@@ -242,7 +253,6 @@ export default function PullupProgramSessionScreen() {
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
 
-      {/* Cancel Confirmation Modal */}
       <CancelWorkoutModal
         visible={showCancelModal}
         onKeepWorking={() => setShowCancelModal(false)}

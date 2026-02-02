@@ -12,7 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function WorkoutTabScreen() {
   const router = useRouter();
   const { currentWorkout } = useWorkoutStore();
-  const { hasStarted, isCompleted, getSessionsCompleted, currentExercise } =
+  const { hasStarted, isCompleted, completedSessionsCount, targetSessions } =
     usePullupProgram();
   const {
     program: activeProgram,
@@ -29,8 +29,8 @@ export default function WorkoutTabScreen() {
   };
 
   // Calculate pullup program progress
-  const pullupSessionsCompleted = getSessionsCompleted();
-  const pullupTotalSessions = currentExercise?.sessionsRequired ?? 5;
+  const pullupSessionsCompleted = completedSessionsCount;
+  const pullupTotalSessions = targetSessions;
 
   return (
     <SafeAreaView className="flex-1 bg-background-light dark:bg-background-dark">
@@ -105,7 +105,7 @@ export default function WorkoutTabScreen() {
                 </Text>
 
                 {/* Progress indicator */}
-                {hasStarted && !isCompleted && currentExercise && (
+                {hasStarted && !isCompleted && (
                   <View className="flex-row items-center">
                     <View className="flex-1 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full mr-2">
                       <View

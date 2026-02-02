@@ -3,28 +3,26 @@ import { PullupProgramExercise } from "@/types/pullup-program";
 /**
  * "Unlock Your First Pull-up" Program Definition
  *
- * This is a GUIDED, COACH-LED program.
- * - Exercises are EXCLUSIVE to this program
- * - NOT in the global exercise catalog
- * - Strict order, no skipping
- * - One exercise per session
+ * NEW MODEL (v2):
+ * - Every session includes ALL exercises
+ * - Program completes after targetSessions (default: 20)
+ * - Builds strength through repeated full sessions
  */
 
 export const PULLUP_PROGRAM = {
   id: "unlock-first-pullup",
   name: "Unlock Your First Pull-up",
   description:
-    "A guided program to help you achieve your first strict pull-up. Follow along with structured exercises designed to build the strength you need.",
+    "A guided program to help you achieve your first strict pull-up. Complete full sessions with all exercises to build the strength you need.",
   type: "FREE" as const,
-  totalExercises: 3,
-  sessionsPerExercise: 1, // 1 session (with 5 sets) per exercise
+  targetSessions: 20, // Total sessions to complete the program
 } as const;
 
 /**
- * Program Exercises - STRICT ORDER
+ * Program Exercises - ALL performed every session
  *
- * User must complete sessionsRequired sessions of each exercise
- * before advancing to the next.
+ * User completes all exercises in order each session.
+ * Each exercise has a set count per session.
  */
 export const PULLUP_PROGRAM_EXERCISES: PullupProgramExercise[] = [
   {
@@ -37,10 +35,10 @@ export const PULLUP_PROGRAM_EXERCISES: PullupProgramExercise[] = [
       "Focus on a 3-5 second descent",
     ],
     targetType: "reps",
-    targetValue: 8,
+    targetValue: 5,
     targetUnit: "reps",
-    sessionsRequired: 1, // 1 session with 5 sets
-    media: undefined, // Placeholder for GIF
+    setsPerSession: 3,
+    media: undefined,
   },
   {
     id: "inverted-rows",
@@ -54,8 +52,8 @@ export const PULLUP_PROGRAM_EXERCISES: PullupProgramExercise[] = [
     targetType: "reps",
     targetValue: 8,
     targetUnit: "reps",
-    sessionsRequired: 1, // 1 session with 5 sets
-    media: undefined, // Placeholder for GIF
+    setsPerSession: 3,
+    media: undefined,
   },
   {
     id: "dead-hangs",
@@ -69,8 +67,8 @@ export const PULLUP_PROGRAM_EXERCISES: PullupProgramExercise[] = [
     targetType: "time",
     targetValue: 30,
     targetUnit: "seconds",
-    sessionsRequired: 1, // 1 session with 5 sets
-    media: undefined, // Placeholder for GIF
+    setsPerSession: 3,
+    media: undefined,
   },
 ];
 
@@ -90,4 +88,11 @@ export function getPullupExerciseByIndex(
   index: number,
 ): PullupProgramExercise | undefined {
   return PULLUP_PROGRAM_EXERCISES[index];
+}
+
+/**
+ * Get total number of exercises in the program
+ */
+export function getTotalExercises(): number {
+  return PULLUP_PROGRAM_EXERCISES.length;
 }

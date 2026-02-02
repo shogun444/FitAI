@@ -1,5 +1,8 @@
 import { Button, Card, Heading, Subheading } from "@/components";
-import { PULLUP_PROGRAM } from "@/data/pullup-program";
+import {
+  PULLUP_PROGRAM,
+  PULLUP_PROGRAM_EXERCISES,
+} from "@/data/pullup-program";
 import { usePullupProgram } from "@/hooks/usePullupProgram";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
@@ -10,10 +13,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 /**
  * Program Overview Screen
  *
- * Shows:
- * - Program introduction (if not started)
- * - Current progress (if in progress)
- * - Completion celebration (if finished)
+ * NEW MODEL (v2):
+ * - Shows program-level progress (Session X of Y)
+ * - Every session includes ALL exercises
+ * - No per-exercise progression
  */
 export default function PullupProgramOverviewScreen() {
   const router = useRouter();
@@ -22,18 +25,17 @@ export default function PullupProgramOverviewScreen() {
     hasStarted,
     isCompleted,
     hasActiveSession,
-    currentExercise,
+    activeSession,
+    targetSessions,
+    completedSessionsCount,
     startProgram,
     startSession,
-    getSessionsCompleted,
     getSessionsRemaining,
-    getAllExerciseProgress,
-    getCurrentExerciseProgress,
+    getNextSessionNumber,
+    getAllExercises,
+    getLastSessionData,
     resetProgram,
     refresh,
-    currentSetIndex,
-    totalSets,
-    completedSets,
   } = usePullupProgram();
 
   // Refresh data when screen comes into focus
@@ -63,9 +65,12 @@ export default function PullupProgramOverviewScreen() {
               <Ionicons name="trophy" size={48} color="#000" />
             </View>
             <Heading className="text-center mb-2">Program Complete!</Heading>
-            <Subheading className="text-center mb-8">
-              You've completed "Unlock Your First Pull-up"
+            <Subheading className="text-center mb-2">
+              You've completed all {targetSessions} sessions!
             </Subheading>
+            <Text className="font-secondary text-gray-500 text-center">
+              "Unlock Your First Pull-up"
+            </Text>
           </View>
 
           <Card className="mb-4">
@@ -73,9 +78,10 @@ export default function PullupProgramOverviewScreen() {
               What's Next?
             </Text>
             <Text className="font-secondary text-gray-600 dark:text-gray-400 mb-4">
-              You've built the foundation. Now it's time to attempt your first
-              pull-up! If you're not quite there yet, you can restart the
-              program to continue building strength.
+              You've built the foundation through {targetSessions} sessions of
+              consistent training. Now it's time to attempt your first pull-up!
+              If you're not quite there yet, you can restart the program to
+              continue building strength.
             </Text>
             <Button
               title="Restart Program"
@@ -93,37 +99,30 @@ export default function PullupProgramOverviewScreen() {
   // ============================================
   // Program In Progress View
   // ============================================
-  if (hasStarted && currentExercise) {
-    const sessionsCompleted = getSessionsCompleted();
+  if (hasStarted) {
     const sessionsRemaining = getSessionsRemaining();
-    const exerciseProgress = getAllExerciseProgress();
+    const nextSessionNumber = getNextSessionNumber();
+    const lastSession = getLastSessionData();
+    const exercisesInSession = getAllExercises();
 
     const handleContinue = () => {
       router.push("/pullup-program/session" as any);
     };
 
-    // Check if there's an in-progress session
-    const hasInProgressSession = hasActiveSession && totalSets > 0;
-    const sessionProgress = hasInProgressSession
-      ? `Set ${currentSetIndex + 1} of ${totalSets}${completedSets.length > 0 ? ` (${completedSets.length} completed)` : ""}`
-      : null;
-
-    // Get last completed workout for this exercise
-    const exerciseProgressData = getCurrentExerciseProgress();
-    const lastSession =
-      exerciseProgressData?.sessionHistory?.[
-        exerciseProgressData.sessionHistory.length - 1
-      ];
-
-    // Determine which sets to display:
-    // 1. If there's an active session with completed sets, show those
-    // 2. Otherwise, if there's a last session, show those sets
-    const displaySets = hasInProgressSession
-      ? completedSets
-      : (lastSession?.sets ?? []);
-
-    const inputType = currentExercise.targetType === "time" ? "time" : "reps";
-    const unit = inputType === "time" ? "sec" : "reps";
+    // Calculate active session progress
+    let activeSessionProgress = null;
+    if (hasActiveSession && activeSession) {
+      const currentExIdx = activeSession.currentExerciseIndex;
+      const currentSetIdx = activeSession.currentSetIndex;
+      const currentExercise = PULLUP_PROGRAM_EXERCISES[currentExIdx];
+      activeSessionProgress = {
+        exerciseName: currentExercise?.name ?? "Unknown",
+        exerciseNumber: currentExIdx + 1,
+        totalExercises: PULLUP_PROGRAM_EXERCISES.length,
+        currentSet: currentSetIdx + 1,
+        totalSets: currentExercise?.setsPerSession ?? 0,
+      };
+    }
 
     return (
       <SafeAreaView className="flex-1 bg-background-light dark:bg-background-dark">
@@ -133,92 +132,107 @@ export default function PullupProgramOverviewScreen() {
             <Text className="font-secondary text-primary text-sm mb-1">
               {PULLUP_PROGRAM.name}
             </Text>
-            <Heading className="mb-2">Continue Training</Heading>
+            <Heading className="mb-2">
+              Session{" "}
+              {hasActiveSession
+                ? activeSession?.sessionNumber
+                : nextSessionNumber}{" "}
+              of {targetSessions}
+            </Heading>
             <Subheading>
-              {sessionsRemaining} session
-              {sessionsRemaining !== 1 ? "s" : ""} remaining for this exercise
+              {sessionsRemaining} session{sessionsRemaining !== 1 ? "s" : ""}{" "}
+              remaining
             </Subheading>
           </View>
 
-          {/* Current Exercise Card */}
-          <Card className="mb-4 border-2 border-primary">
-            <View className="flex-row items-center mb-3">
-              <View className="w-10 h-10 bg-primary rounded-full items-center justify-center mr-3">
-                <Text className="font-primaryBold text-black">
-                  {sessionsCompleted}/{currentExercise.sessionsRequired}
-                </Text>
-              </View>
-              <View className="flex-1">
-                <Text className="font-primarySemiBold text-lg text-gray-900 dark:text-white">
-                  {currentExercise.name}
-                </Text>
-                <Text className="font-secondary text-sm text-gray-500">
-                  Current exercise
-                </Text>
-              </View>
+          {/* Progress Bar */}
+          <View className="mb-6">
+            <View className="h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+              <View
+                className="h-full bg-primary rounded-full"
+                style={{
+                  width: `${(completedSessionsCount / targetSessions) * 100}%`,
+                }}
+              />
             </View>
+            <Text className="font-secondary text-sm text-gray-500 mt-2 text-center">
+              {completedSessionsCount} of {targetSessions} sessions completed
+            </Text>
+          </View>
 
-            <View className="bg-gray-100 dark:bg-gray-800 rounded-lg p-3 mb-4">
-              <Text className="font-secondaryMedium text-gray-700 dark:text-gray-300">
-                Goal: {currentExercise.targetValue} {currentExercise.targetUnit}
-              </Text>
-              {sessionProgress && (
-                <Text className="font-secondaryMedium text-primary mt-1">
-                  In Progress: {sessionProgress}
-                </Text>
-              )}
-            </View>
-
-            {/* Display sets from active session or last workout */}
-            {displaySets.length > 0 && (
-              <View className="bg-gray-100 dark:bg-gray-800 rounded-lg p-3 mb-4">
-                <Text className="font-secondaryMedium text-gray-600 dark:text-gray-400 mb-2">
-                  {hasInProgressSession ? "Completed Sets" : "Last Workout"}
-                </Text>
-                <View className="flex-row flex-wrap gap-2">
-                  {displaySets.map((set, idx) => {
-                    const value = set.repsCompleted ?? set.timeCompleted ?? 0;
-                    return (
-                      <View
-                        key={idx}
-                        className="bg-green-500/20 px-3 py-1.5 rounded-full"
-                      >
-                        <Text className="font-secondaryMedium text-green-600 dark:text-green-400 text-sm">
-                          Set {set.setIndex + 1}: {value} {unit}
-                        </Text>
-                      </View>
-                    );
-                  })}
+          {/* Active Session Card (if in progress) */}
+          {hasActiveSession && activeSessionProgress && (
+            <Card className="mb-4 border-2 border-primary">
+              <View className="flex-row items-center mb-3">
+                <View className="w-10 h-10 bg-primary rounded-full items-center justify-center mr-3">
+                  <Ionicons name="play" size={20} color="#000" />
+                </View>
+                <View className="flex-1">
+                  <Text className="font-primarySemiBold text-lg text-gray-900 dark:text-white">
+                    Session In Progress
+                  </Text>
+                  <Text className="font-secondary text-sm text-gray-500">
+                    Resume where you left off
+                  </Text>
                 </View>
               </View>
-            )}
 
-            <Button
-              title={
-                hasInProgressSession ? "Continue Session" : "Start Session"
-              }
-              onPress={handleContinue}
-            />
-          </Card>
+              <View className="bg-gray-100 dark:bg-gray-800 rounded-lg p-3 mb-4">
+                <Text className="font-secondaryMedium text-gray-700 dark:text-gray-300">
+                  {activeSessionProgress.exerciseName}
+                </Text>
+                <Text className="font-secondary text-sm text-gray-500 mt-1">
+                  Exercise {activeSessionProgress.exerciseNumber} of{" "}
+                  {activeSessionProgress.totalExercises} • Set{" "}
+                  {activeSessionProgress.currentSet} of{" "}
+                  {activeSessionProgress.totalSets}
+                </Text>
+              </View>
 
-          {/* Progress Overview */}
+              <Button title="Continue Session" onPress={handleContinue} />
+            </Card>
+          )}
+
+          {/* Start New Session Card (if no active session) */}
+          {!hasActiveSession && (
+            <Card className="mb-4 border-2 border-primary">
+              <View className="flex-row items-center mb-3">
+                <View className="w-10 h-10 bg-primary rounded-full items-center justify-center mr-3">
+                  <Text className="font-primaryBold text-black">
+                    {nextSessionNumber}
+                  </Text>
+                </View>
+                <View className="flex-1">
+                  <Text className="font-primarySemiBold text-lg text-gray-900 dark:text-white">
+                    Ready for Session {nextSessionNumber}
+                  </Text>
+                  <Text className="font-secondary text-sm text-gray-500">
+                    Complete all 3 exercises
+                  </Text>
+                </View>
+              </View>
+
+              <Button title="Start Session" onPress={handleContinue} />
+            </Card>
+          )}
+
+          {/* Session Exercises Overview */}
           <Text className="font-primarySemiBold text-lg text-gray-900 dark:text-white mb-3">
-            Your Progress
+            Exercises Per Session
           </Text>
 
-          {exerciseProgress.map(
-            ({
-              exercise,
-              completedSessions,
-              isUnlocked,
-              isComplete,
-              sessionHistory,
-            }) => {
-              // Get the last session for this exercise (if any)
-              const lastSession = sessionHistory?.[sessionHistory.length - 1];
-              const lastSets = lastSession?.sets ?? [];
-              const exerciseUnit =
-                exercise.targetType === "time" ? "sec" : "reps";
+          {exercisesInSession.map(
+            (
+              {
+                exercise,
+                setsCompleted,
+                totalSets,
+                isCurrentExercise,
+                isComplete,
+              },
+              index,
+            ) => {
+              const unit = exercise.targetType === "time" ? "sec" : "reps";
 
               return (
                 <Card key={exercise.id} className="mb-2">
@@ -227,9 +241,9 @@ export default function PullupProgramOverviewScreen() {
                       className={`w-8 h-8 rounded-full items-center justify-center mr-3 ${
                         isComplete
                           ? "bg-green-500"
-                          : isUnlocked
+                          : isCurrentExercise
                             ? "bg-primary"
-                            : "bg-gray-300 dark:bg-gray-700"
+                            : "bg-gray-200 dark:bg-gray-700"
                       }`}
                     >
                       {isComplete ? (
@@ -237,52 +251,74 @@ export default function PullupProgramOverviewScreen() {
                       ) : (
                         <Text
                           className={`font-secondarySemiBold text-sm ${
-                            isUnlocked ? "text-black" : "text-gray-500"
+                            isCurrentExercise ? "text-black" : "text-gray-500"
                           }`}
                         >
-                          {completedSessions}/{exercise.sessionsRequired}
+                          {index + 1}
                         </Text>
                       )}
                     </View>
                     <View className="flex-1">
-                      <Text
-                        className={`font-primaryMedium ${
-                          isUnlocked || isComplete
-                            ? "text-gray-900 dark:text-white"
-                            : "text-gray-400"
-                        }`}
-                      >
+                      <Text className="font-primaryMedium text-gray-900 dark:text-white">
                         {exercise.name}
                       </Text>
-                      {!isUnlocked && !isComplete && (
-                        <Text className="font-secondary text-xs text-gray-400">
-                          Locked
-                        </Text>
-                      )}
-                      {/* Show last workout sets if available */}
-                      {lastSets.length > 0 && (
-                        <View className="flex-row flex-wrap gap-1 mt-1">
-                          {lastSets.map((set, idx) => {
-                            const value =
-                              set.repsCompleted ?? set.timeCompleted ?? 0;
-                            return (
-                              <Text
-                                key={idx}
-                                className="font-secondary text-xs text-gray-500"
-                              >
-                                {idx > 0 ? " • " : ""}
-                                {value}
-                                {exerciseUnit}
-                              </Text>
-                            );
-                          })}
-                        </View>
-                      )}
+                      <Text className="font-secondary text-sm text-gray-500">
+                        {totalSets} sets × {exercise.targetValue} {unit}
+                        {hasActiveSession && setsCompleted > 0 && (
+                          <Text className="text-primary">
+                            {" "}
+                            • {setsCompleted}/{totalSets} done
+                          </Text>
+                        )}
+                      </Text>
                     </View>
                   </View>
                 </Card>
               );
             },
+          )}
+
+          {/* Last Session Summary (if available) */}
+          {lastSession && (
+            <View className="mt-4">
+              <Text className="font-primarySemiBold text-lg text-gray-900 dark:text-white mb-3">
+                Last Session (#{lastSession.sessionNumber})
+              </Text>
+              {lastSession.exercises.map((exData) => {
+                const exercise = PULLUP_PROGRAM_EXERCISES.find(
+                  (e) => e.id === exData.exerciseId,
+                );
+                if (!exercise) return null;
+                const unit = exercise.targetType === "time" ? "sec" : "reps";
+
+                return (
+                  <Card
+                    key={exData.exerciseId}
+                    className="mb-2 bg-gray-50 dark:bg-gray-800/50"
+                  >
+                    <Text className="font-primaryMedium text-gray-700 dark:text-gray-300 mb-1">
+                      {exercise.name}
+                    </Text>
+                    <View className="flex-row flex-wrap gap-2">
+                      {exData.sets.map((set, idx) => {
+                        const value =
+                          set.repsCompleted ?? set.timeCompleted ?? 0;
+                        return (
+                          <View
+                            key={idx}
+                            className="bg-green-500/10 px-2 py-1 rounded"
+                          >
+                            <Text className="font-secondary text-xs text-green-600 dark:text-green-400">
+                              {value} {unit}
+                            </Text>
+                          </View>
+                        );
+                      })}
+                    </View>
+                  </Card>
+                );
+              })}
+            </View>
           )}
         </ScrollView>
       </SafeAreaView>
@@ -294,7 +330,6 @@ export default function PullupProgramOverviewScreen() {
   // ============================================
   const handleStartProgram = async () => {
     await startProgram();
-    startSession();
     router.push("/pullup-program/session" as any);
   };
 
@@ -325,57 +360,31 @@ export default function PullupProgramOverviewScreen() {
         {/* Program Structure */}
         <Card className="mb-4">
           <Text className="font-primarySemiBold text-lg text-gray-900 dark:text-white mb-3">
-            What You'll Do
+            Every Session Includes
           </Text>
 
           <View className="gap-3">
-            <View className="flex-row items-start">
-              <View className="w-6 h-6 bg-primary/20 rounded-full items-center justify-center mr-3 mt-0.5">
-                <Text className="font-secondarySemiBold text-primary text-xs">
-                  1
-                </Text>
-              </View>
-              <View className="flex-1">
-                <Text className="font-primaryMedium text-gray-900 dark:text-white">
-                  Negative Pull-ups
-                </Text>
-                <Text className="font-secondary text-sm text-gray-500">
-                  Build lowering strength • 5 sessions
-                </Text>
-              </View>
-            </View>
-
-            <View className="flex-row items-start">
-              <View className="w-6 h-6 bg-primary/20 rounded-full items-center justify-center mr-3 mt-0.5">
-                <Text className="font-secondarySemiBold text-primary text-xs">
-                  2
-                </Text>
-              </View>
-              <View className="flex-1">
-                <Text className="font-primaryMedium text-gray-900 dark:text-white">
-                  Inverted Rows
-                </Text>
-                <Text className="font-secondary text-sm text-gray-500">
-                  Build pulling strength • 5 sessions
-                </Text>
-              </View>
-            </View>
-
-            <View className="flex-row items-start">
-              <View className="w-6 h-6 bg-primary/20 rounded-full items-center justify-center mr-3 mt-0.5">
-                <Text className="font-secondarySemiBold text-primary text-xs">
-                  3
-                </Text>
-              </View>
-              <View className="flex-1">
-                <Text className="font-primaryMedium text-gray-900 dark:text-white">
-                  Dead Hangs
-                </Text>
-                <Text className="font-secondary text-sm text-gray-500">
-                  Build grip strength • 5 sessions
-                </Text>
-              </View>
-            </View>
+            {PULLUP_PROGRAM_EXERCISES.map((exercise, index) => {
+              const unit = exercise.targetType === "time" ? "seconds" : "reps";
+              return (
+                <View key={exercise.id} className="flex-row items-start">
+                  <View className="w-6 h-6 bg-primary/20 rounded-full items-center justify-center mr-3 mt-0.5">
+                    <Text className="font-secondarySemiBold text-primary text-xs">
+                      {index + 1}
+                    </Text>
+                  </View>
+                  <View className="flex-1">
+                    <Text className="font-primaryMedium text-gray-900 dark:text-white">
+                      {exercise.name}
+                    </Text>
+                    <Text className="font-secondary text-sm text-gray-500">
+                      {exercise.setsPerSession} sets × {exercise.targetValue}{" "}
+                      {unit}
+                    </Text>
+                  </View>
+                </View>
+              );
+            })}
           </View>
         </Card>
 
@@ -384,11 +393,11 @@ export default function PullupProgramOverviewScreen() {
           <View className="items-center py-2">
             <Ionicons name="checkmark-circle" size={32} color="#c9f158" />
             <Text className="font-primarySemiBold text-lg text-gray-900 dark:text-white mt-2">
-              Your program is ready
+              {PULLUP_PROGRAM.targetSessions} Sessions to Success
             </Text>
             <Text className="font-secondary text-gray-600 dark:text-gray-400 text-center mt-1">
-              One exercise per session. Follow the guidance. Build your
-              strength.
+              Complete all exercises each session. Build strength through
+              consistency.
             </Text>
           </View>
         </Card>

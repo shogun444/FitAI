@@ -1,5 +1,6 @@
 import {
   getPullupExerciseByIndex,
+  getTotalExercises,
   PULLUP_PROGRAM,
   PULLUP_PROGRAM_EXERCISES,
 } from "@/data/pullup-program";
@@ -8,20 +9,18 @@ import {
   createDefaultProgress,
   loadActiveSession,
   loadPullupProgress,
-  recordPullupSession,
+  recordCompletedSession,
   resetPullupProgress,
   saveActiveSession,
   savePullupProgress,
 } from "@/lib/pullupProgramStorage";
 import {
   ActivePullupSession,
+  ExerciseSessionData,
   PullupProgramProgress,
   PullupSet,
 } from "@/types/pullup-program";
 import { useCallback, useEffect, useState } from "react";
-
-/** Default number of sets per session */
-const DEFAULT_SETS_PER_SESSION = 5;
 
 /** Generate unique session ID */
 function generateSessionId(): string {
@@ -31,11 +30,10 @@ function generateSessionId(): string {
 /**
  * Hook for managing "Unlock Your First Pull-up" program state.
  *
- * Provides:
- * - Program progress (persisted)
- * - Active session state (in-memory)
- * - Session lifecycle: start, complete, cancel
- * - Progression logic
+ * NEW MODEL (v2):
+ * - Every session includes ALL exercises
+ * - Program completes after N total sessions (default: 20)
+ * - No per-exercise session tracking
  */
 export function usePullupProgram() {
   const [progress, setProgress] = useState<PullupProgramProgress | null>(null);
@@ -70,28 +68,30 @@ export function usePullupProgram() {
 
   const hasStarted = progress !== null;
   const isCompleted = progress?.isCompleted ?? false;
-  const currentExerciseIndex = progress?.currentExerciseIndex ?? 0;
-  const currentExercise = getPullupExerciseByIndex(currentExerciseIndex);
+  const targetSessions =
+    progress?.targetSessions ?? PULLUP_PROGRAM.targetSessions;
+  const completedSessionsCount = progress?.completedSessions ?? 0;
 
-  const getCurrentExerciseProgress = useCallback(() => {
-    if (!progress || !currentExercise) return null;
-    return (
-      progress.exerciseProgress[currentExercise.id] ?? {
-        completedSessions: 0,
-        sessionHistory: [],
-      }
-    );
-  }, [progress, currentExercise]);
+  // Current exercise in the active session
+  const currentExerciseIndex = activeSession?.currentExerciseIndex ?? 0;
+  const currentExercise = getPullupExerciseByIndex(currentExerciseIndex);
+  const totalExercises = getTotalExercises();
+
+  // ============================================
+  // Progress Helpers
+  // ============================================
 
   const getSessionsCompleted = useCallback(() => {
-    const exerciseProgress = getCurrentExerciseProgress();
-    return exerciseProgress?.completedSessions ?? 0;
-  }, [getCurrentExerciseProgress]);
+    return completedSessionsCount;
+  }, [completedSessionsCount]);
 
   const getSessionsRemaining = useCallback(() => {
-    if (!currentExercise) return 0;
-    return currentExercise.sessionsRequired - getSessionsCompleted();
-  }, [currentExercise, getSessionsCompleted]);
+    return targetSessions - completedSessionsCount;
+  }, [targetSessions, completedSessionsCount]);
+
+  const getNextSessionNumber = useCallback(() => {
+    return completedSessionsCount + 1;
+  }, [completedSessionsCount]);
 
   // ============================================
   // Program Lifecycle
@@ -115,37 +115,40 @@ export function usePullupProgram() {
   // ============================================
 
   /**
-   * Start a new session. Persists immediately.
+   * Start a new session with all exercises.
+   * Persists immediately.
    */
-  const startSession = useCallback(
-    async (setsCount: number = DEFAULT_SETS_PER_SESSION) => {
-      if (!currentExercise) return null;
+  const startSession = useCallback(async () => {
+    const sessionNumber = completedSessionsCount + 1;
 
-      const session: ActivePullupSession = {
-        programId: "unlock-first-pullup",
-        sessionId: generateSessionId(),
-        exerciseId: currentExercise.id,
-        totalSets: setsCount,
-        currentSetIndex: 0,
+    // Initialize exercise data for all exercises
+    const exercises: ExerciseSessionData[] = PULLUP_PROGRAM_EXERCISES.map(
+      (ex) => ({
+        exerciseId: ex.id,
         sets: [],
-        startedAt: Date.now(),
-      };
+      }),
+    );
 
-      await saveActiveSession(session);
-      setActiveSession(session);
-      setInputValue(null);
-      return session;
-    },
-    [currentExercise],
-  );
+    const session: ActivePullupSession = {
+      programId: "unlock-first-pullup",
+      sessionId: generateSessionId(),
+      sessionNumber,
+      currentExerciseIndex: 0,
+      currentSetIndex: 0,
+      exercises,
+      startedAt: Date.now(),
+    };
+
+    await saveActiveSession(session);
+    setActiveSession(session);
+    setInputValue(null);
+    return session;
+  }, [completedSessionsCount]);
 
   /**
    * Resume an existing session (already loaded from storage on mount).
-   * This is a no-op if session is already hydrated.
    */
   const resumeSession = useCallback(() => {
-    // Session is already hydrated on mount via loadActiveSession
-    // This method exists for explicit intent in UI
     return activeSession;
   }, [activeSession]);
 
@@ -165,90 +168,129 @@ export function usePullupProgram() {
     setInputValue(null);
   }, []);
 
+  // ============================================
+  // Set Management
+  // ============================================
+
+  /**
+   * Get current exercise's sets from the active session
+   */
+  const getCurrentExerciseSets = useCallback(() => {
+    if (!activeSession) return [];
+    const exerciseData =
+      activeSession.exercises[activeSession.currentExerciseIndex];
+    return exerciseData?.sets ?? [];
+  }, [activeSession]);
+
+  /**
+   * Get total sets required for current exercise
+   */
+  const getTotalSetsForCurrentExercise = useCallback(() => {
+    if (!currentExercise) return 0;
+    return currentExercise.setsPerSession;
+  }, [currentExercise]);
+
   /**
    * Save the current set and advance to next set.
-   * Persists to storage. Returns false if on last set.
+   * If all sets for current exercise are done, advance to next exercise.
+   * Returns: { advancedExercise: boolean, sessionComplete: boolean }
    */
   const saveSetAndAdvance = useCallback(async () => {
-    if (!activeSession || inputValue === null) return false;
-    if (!currentExercise) return false;
-
-    // Don't advance if we're on the last set
-    if (activeSession.currentSetIndex >= activeSession.totalSets - 1) {
-      return false;
+    if (!activeSession || inputValue === null || !currentExercise) {
+      return { advancedExercise: false, sessionComplete: false };
     }
 
     const isTimeInput = currentExercise.targetType === "time";
+    const currentExIdx = activeSession.currentExerciseIndex;
+    const currentSetIdx = activeSession.currentSetIndex;
+    const totalSetsForExercise = currentExercise.setsPerSession;
 
+    // Create the completed set
     const completedSet: PullupSet = {
-      setIndex: activeSession.currentSetIndex,
+      setIndex: currentSetIdx,
       ...(isTimeInput
         ? { timeCompleted: inputValue }
         : { repsCompleted: inputValue }),
     };
 
-    const updatedSession: ActivePullupSession = {
-      ...activeSession,
-      sets: [...activeSession.sets, completedSet],
-      currentSetIndex: activeSession.currentSetIndex + 1,
+    // Update the exercise's sets
+    const updatedExercises = [...activeSession.exercises];
+    updatedExercises[currentExIdx] = {
+      ...updatedExercises[currentExIdx],
+      sets: [...updatedExercises[currentExIdx].sets, completedSet],
     };
 
-    await saveActiveSession(updatedSession);
-    setActiveSession(updatedSession);
-    setInputValue(null);
+    const nextSetIndex = currentSetIdx + 1;
+    const isLastSetOfExercise = nextSetIndex >= totalSetsForExercise;
+    const isLastExercise = currentExIdx >= totalExercises - 1;
 
-    return true;
-  }, [activeSession, inputValue, currentExercise]);
+    let updatedSession: ActivePullupSession;
 
-  /**
-   * Remove the last completed set and go back to it.
-   * Persists to storage. Returns false if no sets to remove.
-   */
-  const goToPreviousSet = useCallback(async () => {
-    if (!activeSession || activeSession.sets.length === 0) {
-      return false;
+    if (isLastSetOfExercise && isLastExercise) {
+      // Session is complete - will be handled by completeSession
+      // Just save the final set
+      updatedSession = {
+        ...activeSession,
+        exercises: updatedExercises,
+        currentSetIndex: nextSetIndex,
+      };
+      await saveActiveSession(updatedSession);
+      setActiveSession(updatedSession);
+      setInputValue(null);
+      return { advancedExercise: false, sessionComplete: true };
+    } else if (isLastSetOfExercise) {
+      // Advance to next exercise
+      updatedSession = {
+        ...activeSession,
+        exercises: updatedExercises,
+        currentExerciseIndex: currentExIdx + 1,
+        currentSetIndex: 0,
+      };
+      await saveActiveSession(updatedSession);
+      setActiveSession(updatedSession);
+      setInputValue(null);
+      return { advancedExercise: true, sessionComplete: false };
+    } else {
+      // Advance to next set of same exercise
+      updatedSession = {
+        ...activeSession,
+        exercises: updatedExercises,
+        currentSetIndex: nextSetIndex,
+      };
+      await saveActiveSession(updatedSession);
+      setActiveSession(updatedSession);
+      setInputValue(null);
+      return { advancedExercise: false, sessionComplete: false };
     }
-
-    const previousSets = activeSession.sets.slice(0, -1);
-    const removedSet = activeSession.sets[activeSession.sets.length - 1];
-
-    const updatedSession: ActivePullupSession = {
-      ...activeSession,
-      sets: previousSets,
-      currentSetIndex: removedSet.setIndex,
-    };
-
-    await saveActiveSession(updatedSession);
-    setActiveSession(updatedSession);
-    setInputValue(removedSet.repsCompleted ?? removedSet.timeCompleted ?? null);
-
-    return true;
-  }, [activeSession]);
+  }, [activeSession, inputValue, currentExercise, totalExercises]);
 
   /**
-   * Remove a specific completed set by index.
-   * Persists to storage. Adjusts currentSetIndex accordingly.
+   * Remove a specific completed set by index from current exercise.
    */
   const removeCompletedSet = useCallback(
     async (setIndex: number) => {
       if (!activeSession) return false;
 
-      const setToRemove = activeSession.sets.find(
-        (s) => s.setIndex === setIndex,
-      );
+      const currentExIdx = activeSession.currentExerciseIndex;
+      const exerciseSets = activeSession.exercises[currentExIdx].sets;
+
+      const setToRemove = exerciseSets.find((s) => s.setIndex === setIndex);
       if (!setToRemove) return false;
 
-      // Remove the set and reindex remaining sets
-      const updatedSets = activeSession.sets
+      // Remove the set and reindex
+      const updatedSets = exerciseSets
         .filter((s) => s.setIndex !== setIndex)
-        .map((s, idx) => ({
-          ...s,
-          setIndex: idx,
-        }));
+        .map((s, idx) => ({ ...s, setIndex: idx }));
+
+      const updatedExercises = [...activeSession.exercises];
+      updatedExercises[currentExIdx] = {
+        ...updatedExercises[currentExIdx],
+        sets: updatedSets,
+      };
 
       const updatedSession: ActivePullupSession = {
         ...activeSession,
-        sets: updatedSets,
+        exercises: updatedExercises,
         currentSetIndex: updatedSets.length,
       };
 
@@ -262,7 +304,8 @@ export function usePullupProgram() {
   );
 
   /**
-   * Complete the session. Saves to history, clears active session from storage.
+   * Complete the entire session.
+   * Records to history and clears active session.
    */
   const completeSession = useCallback(async () => {
     if (!activeSession || inputValue === null || !currentExercise) {
@@ -270,6 +313,7 @@ export function usePullupProgram() {
     }
 
     const isTimeInput = currentExercise.targetType === "time";
+    const currentExIdx = activeSession.currentExerciseIndex;
 
     // Save the final set
     const finalSet: PullupSet = {
@@ -279,23 +323,23 @@ export function usePullupProgram() {
         : { repsCompleted: inputValue }),
     };
 
-    const allSets = [...activeSession.sets, finalSet];
+    // Update final exercise's sets
+    const updatedExercises = [...activeSession.exercises];
+    updatedExercises[currentExIdx] = {
+      ...updatedExercises[currentExIdx],
+      sets: [...updatedExercises[currentExIdx].sets, finalSet],
+      completedAt: Date.now(),
+    };
 
-    // Calculate total value (sum of all sets)
-    const totalValue = allSets.reduce((sum, set) => {
-      return sum + (set.repsCompleted ?? set.timeCompleted ?? 0);
-    }, 0);
+    const finalSession: ActivePullupSession = {
+      ...activeSession,
+      exercises: updatedExercises,
+    };
 
     // Record to history
-    const updatedProgress = await recordPullupSession(
-      activeSession.exerciseId,
-      totalValue,
-      allSets,
-      currentExercise.sessionsRequired,
-      PULLUP_PROGRAM.totalExercises,
-    );
+    const updatedProgress = await recordCompletedSession(finalSession);
 
-    // Clear active session from storage
+    // Clear active session
     await clearActiveSession();
 
     setProgress(updatedProgress);
@@ -304,57 +348,52 @@ export function usePullupProgram() {
 
     return {
       progress: updatedProgress,
-      advanced:
-        updatedProgress.currentExerciseIndex !== currentExerciseIndex ||
-        updatedProgress.isCompleted,
       programCompleted: updatedProgress.isCompleted,
     };
-  }, [activeSession, inputValue, currentExercise, currentExerciseIndex]);
+  }, [activeSession, inputValue, currentExercise]);
 
   // ============================================
-  // Check if Session Active
+  // Derived State for UI
   // ============================================
 
   const hasActiveSession = activeSession !== null;
+  const currentSets = getCurrentExerciseSets();
+  const totalSetsForExercise = getTotalSetsForCurrentExercise();
+  const currentSetIndex = activeSession?.currentSetIndex ?? 0;
+  const isLastSet = currentSetIndex >= totalSetsForExercise - 1;
+  const isLastExercise = currentExerciseIndex >= totalExercises - 1;
+  const isLastSetOfSession = isLastSet && isLastExercise;
+  const canGoBack = currentSets.length > 0;
 
   // ============================================
-  // Get All Exercise Progress (for overview)
+  // Get All Exercises (for overview)
   // ============================================
 
-  const getAllExerciseProgress = useCallback(() => {
+  const getAllExercises = useCallback(() => {
     return PULLUP_PROGRAM_EXERCISES.map((exercise, index) => {
-      const exerciseProgress = progress?.exerciseProgress[exercise.id];
-      const completedSessions = exerciseProgress?.completedSessions ?? 0;
-      // Exercise is unlocked if:
-      // 1. We haven't started (index 0 is unlocked by default)
-      // 2. Index is at or before current exercise index
-      // 3. Program is completed (all exercises are unlocked)
-      const isUnlocked =
-        isCompleted || index <= (progress?.currentExerciseIndex ?? 0);
-      const isComplete = completedSessions >= exercise.sessionsRequired;
+      // Check if this exercise has data in the active session
+      const activeExerciseData = activeSession?.exercises[index];
+      const setsCompleted = activeExerciseData?.sets.length ?? 0;
+      const isCurrentExercise = activeSession?.currentExerciseIndex === index;
 
       return {
         exercise,
-        completedSessions,
-        isUnlocked,
-        isComplete,
-        isCurrent: index === currentExerciseIndex && !isCompleted,
-        sessionHistory: exerciseProgress?.sessionHistory ?? [],
+        setsCompleted,
+        totalSets: exercise.setsPerSession,
+        isCurrentExercise,
+        isComplete: setsCompleted >= exercise.setsPerSession,
       };
     });
-  }, [progress, currentExerciseIndex, isCompleted]);
+  }, [activeSession]);
 
   // ============================================
-  // Set-Level Derived State
+  // Get Last Session Data (for overview)
   // ============================================
 
-  const currentSetIndex = activeSession?.currentSetIndex ?? 0;
-  const totalSets = activeSession?.totalSets ?? 0;
-  const completedSets = activeSession?.sets ?? [];
-  const isLastSet = activeSession
-    ? activeSession.currentSetIndex === activeSession.totalSets - 1
-    : false;
-  const canGoBack = completedSets.length > 0;
+  const getLastSessionData = useCallback(() => {
+    if (!progress || progress.sessionHistory.length === 0) return null;
+    return progress.sessionHistory[progress.sessionHistory.length - 1];
+  }, [progress]);
 
   return {
     // State
@@ -363,25 +402,31 @@ export function usePullupProgram() {
     isLoading,
     inputValue,
 
-    // Derived
+    // Program-level derived state
     hasStarted,
     isCompleted,
-    currentExercise,
-    currentExerciseIndex,
+    targetSessions,
+    completedSessionsCount,
     hasActiveSession,
 
-    // Set-level state
+    // Session-level derived state
+    currentExercise,
+    currentExerciseIndex,
+    totalExercises,
     currentSetIndex,
-    totalSets,
-    completedSets,
+    totalSetsForExercise,
+    currentSets,
     isLastSet,
+    isLastExercise,
+    isLastSetOfSession,
     canGoBack,
 
     // Progress helpers
     getSessionsCompleted,
     getSessionsRemaining,
-    getCurrentExerciseProgress,
-    getAllExerciseProgress,
+    getNextSessionNumber,
+    getAllExercises,
+    getLastSessionData,
 
     // Program actions
     startProgram,
@@ -394,7 +439,6 @@ export function usePullupProgram() {
     updateSessionValue,
     cancelSession,
     saveSetAndAdvance,
-    goToPreviousSet,
     removeCompletedSet,
     completeSession,
   };

@@ -1,5 +1,8 @@
 import { Button, Heading, Subheading } from "@/components";
-import { PULLUP_PROGRAM } from "@/data/pullup-program";
+import {
+  PULLUP_PROGRAM,
+  PULLUP_PROGRAM_EXERCISES,
+} from "@/data/pullup-program";
 import { usePullupProgram } from "@/hooks/usePullupProgram";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -9,22 +12,15 @@ import { SafeAreaView } from "react-native-safe-area-context";
 /**
  * Program Completion Screen
  *
- * Celebrates the user for completing all exercises.
+ * Celebrates the user for completing all sessions.
  * Provides options to:
  * - Go back to home
  * - Restart the program
  */
 export default function PullupProgramCompleteScreen() {
   const router = useRouter();
-  const { progress, resetProgram, getAllExerciseProgress } = usePullupProgram();
-
-  const exerciseProgress = getAllExerciseProgress();
-
-  // Calculate total sessions completed
-  const totalSessions = exerciseProgress.reduce(
-    (sum, { completedSessions }) => sum + completedSessions,
-    0,
-  );
+  const { progress, resetProgram, targetSessions, completedSessionsCount } =
+    usePullupProgram();
 
   const handleGoHome = () => {
     router.replace("/");
@@ -64,7 +60,7 @@ export default function PullupProgramCompleteScreen() {
           <View className="flex-row justify-around">
             <View className="items-center">
               <Text className="font-secondarySemiBold text-4xl text-gray-900 dark:text-white">
-                {totalSessions}
+                {completedSessionsCount}
               </Text>
               <Text className="font-secondary text-gray-600 dark:text-gray-400 text-sm">
                 Sessions
@@ -75,7 +71,7 @@ export default function PullupProgramCompleteScreen() {
 
             <View className="items-center">
               <Text className="font-secondarySemiBold text-4xl text-gray-900 dark:text-white">
-                {PULLUP_PROGRAM.totalExercises}
+                {PULLUP_PROGRAM_EXERCISES.length}
               </Text>
               <Text className="font-secondary text-gray-600 dark:text-gray-400 text-sm">
                 Exercises
@@ -99,10 +95,10 @@ export default function PullupProgramCompleteScreen() {
         {/* Exercise Summary */}
         {/* ============================================ */}
         <Text className="font-primarySemiBold text-lg text-gray-900 dark:text-white mb-3">
-          Your Journey
+          Your Training
         </Text>
 
-        {exerciseProgress.map(({ exercise, completedSessions }) => (
+        {PULLUP_PROGRAM_EXERCISES.map((exercise) => (
           <View
             key={exercise.id}
             className="flex-row items-center bg-white dark:bg-gray-900 rounded-xl p-4 mb-2"
@@ -115,7 +111,7 @@ export default function PullupProgramCompleteScreen() {
                 {exercise.name}
               </Text>
               <Text className="font-secondary text-sm text-gray-500">
-                {completedSessions} sessions completed
+                {exercise.setsPerSession} sets per session
               </Text>
             </View>
           </View>
@@ -129,9 +125,9 @@ export default function PullupProgramCompleteScreen() {
             What's Next?
           </Text>
           <Text className="font-secondary text-gray-600 dark:text-gray-400 leading-6">
-            You've built the foundation strength for your first pull-up. Now
-            it's time to test yourself! Find a pull-up bar and give it your best
-            shot.
+            You've built the foundation strength for your first pull-up through{" "}
+            {completedSessionsCount} dedicated sessions. Now it's time to test
+            yourself! Find a pull-up bar and give it your best shot.
           </Text>
           <Text className="font-secondary text-gray-600 dark:text-gray-400 leading-6 mt-3">
             If you're not quite there yet, don't worry. Restart the program and
