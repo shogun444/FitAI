@@ -20,6 +20,7 @@ export default function PullupProgramOverviewScreen() {
     isLoading,
     hasStarted,
     isCompleted,
+    hasActiveSession,
     currentExercise,
     startProgram,
     startSession,
@@ -27,6 +28,9 @@ export default function PullupProgramOverviewScreen() {
     getSessionsRemaining,
     getAllExerciseProgress,
     resetProgram,
+    currentSetIndex,
+    totalSets,
+    completedSets,
   } = usePullupProgram();
 
   if (isLoading) {
@@ -88,6 +92,12 @@ export default function PullupProgramOverviewScreen() {
       router.push("/pullup-program/session" as any);
     };
 
+    // Check if there's an in-progress session
+    const hasInProgressSession = hasActiveSession && totalSets > 0;
+    const sessionProgress = hasInProgressSession
+      ? `Set ${currentSetIndex + 1} of ${totalSets}${completedSets.length > 0 ? ` (${completedSets.length} completed)` : ""}`
+      : null;
+
     return (
       <SafeAreaView className="flex-1 bg-background-light dark:bg-background-dark">
         <ScrollView className="flex-1 p-4">
@@ -125,9 +135,19 @@ export default function PullupProgramOverviewScreen() {
               <Text className="font-secondaryMedium text-gray-700 dark:text-gray-300">
                 Goal: {currentExercise.targetValue} {currentExercise.targetUnit}
               </Text>
+              {sessionProgress && (
+                <Text className="font-secondaryMedium text-primary mt-1">
+                  In Progress: {sessionProgress}
+                </Text>
+              )}
             </View>
 
-            <Button title="Start Session" onPress={handleContinue} />
+            <Button
+              title={
+                hasInProgressSession ? "Continue Session" : "Start Session"
+              }
+              onPress={handleContinue}
+            />
           </Card>
 
           {/* Progress Overview */}

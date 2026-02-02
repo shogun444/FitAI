@@ -77,15 +77,31 @@ export interface PullupProgramProgress {
 }
 
 // ============================================
-// Active Session (In-Memory)
+// Active Session (Persisted)
 // ============================================
 
 export interface ActivePullupSession {
+  /** Fixed identifier for this program */
+  programId: "unlock-first-pullup";
+  /** Unique session identifier */
+  sessionId: string;
+  /** Current exercise being performed */
   exerciseId: string;
-  exerciseName: string;
+  /** Total sets in this session */
+  totalSets: number;
+  /** 0-based index of current set */
+  currentSetIndex: number;
+  /** Sets completed so far */
+  sets: PullupSet[];
+  /** When the session started */
   startedAt: number;
-  totalSets: number; // Total sets in this session
-  currentSetIndex: number; // 0-based index of current set
-  completedSets: PullupSet[]; // Sets completed so far
-  value: number | null; // User's input for current set
+}
+
+/**
+ * Transient UI state (NOT persisted)
+ * Kept separate from persisted session data
+ */
+export interface ActiveSessionUIState {
+  /** User's current input value for the active set */
+  inputValue: number | null;
 }

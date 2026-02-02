@@ -137,3 +137,52 @@ export async function hasPullupProgramStarted(): Promise<boolean> {
   const progress = await loadPullupProgress();
   return progress !== null;
 }
+
+// ============================================
+// Active Session Persistence
+// ============================================
+
+import { ActivePullupSession } from "@/types/pullup-program";
+
+const ACTIVE_SESSION_KEY = "active_pullup_session";
+
+/**
+ * Load persisted active session.
+ * Returns null if no session exists.
+ */
+export async function loadActiveSession(): Promise<ActivePullupSession | null> {
+  try {
+    const data = await AsyncStorage.getItem(ACTIVE_SESSION_KEY);
+    if (!data) return null;
+    return JSON.parse(data) as ActivePullupSession;
+  } catch (error) {
+    console.error("Failed to load active pullup session:", error);
+    return null;
+  }
+}
+
+/**
+ * Persist active session to storage.
+ * Called on: session start, set completion, navigation to next set.
+ */
+export async function saveActiveSession(
+  session: ActivePullupSession,
+): Promise<void> {
+  try {
+    await AsyncStorage.setItem(ACTIVE_SESSION_KEY, JSON.stringify(session));
+  } catch (error) {
+    console.error("Failed to save active pullup session:", error);
+  }
+}
+
+/**
+ * Clear active session from storage.
+ * Called on: session complete, session cancel.
+ */
+export async function clearActiveSession(): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(ACTIVE_SESSION_KEY);
+  } catch (error) {
+    console.error("Failed to clear active pullup session:", error);
+  }
+}
