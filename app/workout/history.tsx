@@ -61,8 +61,11 @@ function formatDate(timestamp: number): string {
  */
 function TimedWorkoutCard({ workout }: { workout: WorkoutSession }) {
   const completionPercent = workout.totalTimePlanned
-    ? Math.round(
-        ((workout.totalTimeCompleted || 0) / workout.totalTimePlanned) * 100,
+    ? Math.min(
+        100,
+        Math.round(
+          ((workout.totalTimeCompleted || 0) / workout.totalTimePlanned) * 100,
+        ),
       )
     : 100;
 
