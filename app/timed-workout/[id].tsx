@@ -52,41 +52,63 @@ export default function TimedWorkoutOverviewScreen() {
 
         {/* How It Works */}
         <Card className="mb-4">
-          <Text className="font-primarySemiBold text-lg text-gray-900 dark:text-white mb-2">
+          <Text className="font-primarySemiBold text-lg text-gray-900 dark:text-white mb-1">
             How It Works
           </Text>
-          <View className="gap-2">
-            <View className="flex-row items-start">
-              <Ionicons
-                name="play-circle"
-                size={20}
-                color="#65a30d"
-                style={{ marginRight: 8, marginTop: 2 }}
-              />
-              <Text className="font-secondary text-gray-600 dark:text-gray-400 flex-1">
-                Tap "Start Workout" and follow along with the timer
+          <Text className="font-secondary text-gray-500 dark:text-gray-400 text-sm mb-4">
+            Follow along with the guided timer
+          </Text>
+
+          <View>
+            <View className="mb-4 border-b border-gray-100 dark:border-gray-800 pb-4">
+              <View className="flex-row items-center mb-1">
+                <Ionicons
+                  name="play-circle"
+                  size={18}
+                  color="#65a30d"
+                  style={{ marginRight: 6 }}
+                />
+                <Text className="font-primarySemiBold text-base text-gray-900 dark:text-white">
+                  Start & Follow
+                </Text>
+              </View>
+              <Text className="font-secondary text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
+                Tap "Start Workout" and follow along with the timer. Each
+                exercise will be displayed with a countdown.
               </Text>
             </View>
-            <View className="flex-row items-start">
-              <Ionicons
-                name="timer"
-                size={20}
-                color="#65a30d"
-                style={{ marginRight: 8, marginTop: 2 }}
-              />
-              <Text className="font-secondary text-gray-600 dark:text-gray-400 flex-1">
-                Each exercise auto-advances when the timer reaches zero
+            <View className="mb-4 border-b border-gray-100 dark:border-gray-800 pb-4">
+              <View className="flex-row items-center mb-1">
+                <Ionicons
+                  name="timer"
+                  size={18}
+                  color="#65a30d"
+                  style={{ marginRight: 6 }}
+                />
+                <Text className="font-primarySemiBold text-base text-gray-900 dark:text-white">
+                  Auto-Advance
+                </Text>
+              </View>
+              <Text className="font-secondary text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
+                Each exercise auto-advances when the timer reaches zero. Just
+                focus on the movement.
               </Text>
             </View>
-            <View className="flex-row items-start">
-              <Ionicons
-                name="pause-circle"
-                size={20}
-                color="#f59e0b"
-                style={{ marginRight: 8, marginTop: 2 }}
-              />
-              <Text className="font-secondary text-gray-600 dark:text-gray-400 flex-1">
-                You can pause anytime if you need a break
+            <View>
+              <View className="flex-row items-center mb-1">
+                <Ionicons
+                  name="pause-circle"
+                  size={18}
+                  color="#f59e0b"
+                  style={{ marginRight: 6 }}
+                />
+                <Text className="font-primarySemiBold text-base text-gray-900 dark:text-white">
+                  Pause Anytime
+                </Text>
+              </View>
+              <Text className="font-secondary text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
+                You can pause anytime if you need a break. The timer will resume
+                when you're ready.
               </Text>
             </View>
           </View>
