@@ -92,7 +92,7 @@ function TimedWorkoutCard({ workout }: { workout: WorkoutSession }) {
       )}
 
       {/* Time stats for timed workouts */}
-      <View className="flex-row gap-4">
+      <View className="flex-row gap-4 mb-3">
         <View>
           <Text className="font-secondary text-sm text-gray-500">Planned</Text>
           <Text className="font-primarySemiBold text-gray-900 dark:text-white">
@@ -126,6 +126,27 @@ function TimedWorkoutCard({ workout }: { workout: WorkoutSession }) {
           </View>
         </View>
       </View>
+
+      {/* Exercise list with time-based sets */}
+      {workout.exercises.length > 0 && (
+        <View className="pt-3 border-t border-gray-200 dark:border-gray-700">
+          {workout.exercises.map((ex) => (
+            <View key={ex.id} className="mb-2">
+              <Text className="font-secondary text-gray-600 dark:text-gray-400 mb-1">
+                • {ex.name}
+              </Text>
+              {ex.sets.map((set, idx) => (
+                <Text
+                  key={set.id}
+                  className="font-secondary text-xs text-gray-500 dark:text-gray-500 ml-4"
+                >
+                  Set{idx + 1} : {set.time}s
+                </Text>
+              ))}
+            </View>
+          ))}
+        </View>
+      )}
     </Card>
   );
 }

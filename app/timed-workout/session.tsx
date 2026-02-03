@@ -27,10 +27,30 @@ export default function TimedWorkoutSessionScreen() {
     const endTime = Date.now();
     const duration = Math.floor((endTime - startTimeRef.current) / 1000);
 
-    // For timed workouts, we store time-based data only (no fake sets/reps/weight)
+    // Build exercises with time-based sets for history display
+    const exercises = program.steps
+      .filter((step) => step.type === "exercise")
+      .map((step, index) => ({
+        id: Crypto.randomUUID(),
+        name: step.name,
+        sets: [
+          {
+            id: Crypto.randomUUID(),
+            reps: null,
+            weight: null,
+            time: step.duration, // Store time in seconds
+            completed: true,
+            isDefault: false,
+            createdAt: startTimeRef.current + index * 1000,
+          },
+        ],
+        createdAt: startTimeRef.current + index * 1000,
+      }));
+
+    // For timed workouts, we store time-based data
     const session: WorkoutSession = {
       id: Crypto.randomUUID(),
-      exercises: [], // No exercises for timed workouts - we track time only
+      exercises: exercises,
       startedAt: startTimeRef.current,
       endedAt: endTime,
       duration: duration > 0 ? duration : program.totalDuration,
@@ -47,16 +67,14 @@ export default function TimedWorkoutSessionScreen() {
       totalTimeCompleted: duration > 0 ? duration : program.totalDuration,
     };
 
-    // Build exercise data for summary page (same format as pullup program)
-    const exerciseData = program.steps
-      .filter((step) => step.type === "exercise")
-      .map((step) => ({
-        name: step.name,
-        sets: [{ time: step.duration }],
-      }));
-
     // Save to workout history
     await saveWorkout(session);
+
+    // Build exercise data for summary page
+    const exerciseData = exercises.map((ex) => ({
+      name: ex.name,
+      sets: ex.sets.map((s) => ({ time: s.time })),
+    }));
 
     // Navigate to summary
     router.replace({

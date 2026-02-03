@@ -21,6 +21,7 @@ export interface WorkoutSet {
   id: string;
   reps: number | null;
   weight: number | null;
+  time: number | null; // in seconds - for timed exercises
   completed: boolean;
   isDefault: boolean;
   createdAt: number;

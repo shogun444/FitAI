@@ -56,6 +56,7 @@ export function mapProgramSessionToHistory({
       id: Crypto.randomUUID(),
       reps: reps,
       weight: recorded.lift.weight,
+      time: null,
       completed: reps > 0,
       isDefault: false,
       createdAt: endTime,
@@ -146,11 +147,10 @@ export function mapPullupSessionToHistory(
       id: Crypto.randomUUID(),
       reps: set.repsCompleted ?? null,
       weight: null, // Bodyweight exercises
+      time: set.timeCompleted ?? null,
       completed: true,
       isDefault: false,
       createdAt: endTime,
-      // Store time as reps for time-based exercises (UI handles display)
-      ...(set.timeCompleted !== undefined && { reps: set.timeCompleted }),
     }));
 
     return {
