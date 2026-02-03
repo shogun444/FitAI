@@ -65,7 +65,7 @@ export default function WorkoutSessionScreen() {
     <SafeAreaView className="flex-1 bg-background-light dark:bg-background-dark">
       {/* Header - unified ScreenHeader with duration */}
       <View className="flex-row items-center justify-between pr-6">
-        <ScreenHeader title="Workout" showBackButton={false} />
+        <ScreenHeader title="Workout" />
         {/* Workout duration */}
         <View className="bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded-lg">
           <Subheading className="text-primary text-base">
