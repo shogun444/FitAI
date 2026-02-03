@@ -34,9 +34,9 @@ export function ProgramHeader({ program }: ProgramHeaderProps) {
         {program.description}
       </Text>
 
-      {/* Key Details */}
-      <View className="flex-row flex-wrap gap-3">
-        <View className="bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-lg">
+      {/* Key Details - 2 items per row */}
+      <View className="flex-row gap-3 mb-3">
+        <View className="flex-1 bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-lg">
           <Text className="font-secondary text-gray-500 dark:text-gray-400 text-xs mb-0.5">
             Frequency
           </Text>
@@ -45,7 +45,7 @@ export function ProgramHeader({ program }: ProgramHeaderProps) {
           </Text>
         </View>
 
-        <View className="bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-lg">
+        <View className="flex-1 bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-lg">
           <Text className="font-secondary text-gray-500 dark:text-gray-400 text-xs mb-0.5">
             Duration
           </Text>
@@ -53,7 +53,9 @@ export function ProgramHeader({ program }: ProgramHeaderProps) {
             {program.duration}
           </Text>
         </View>
+      </View>
 
+      <View className="flex-row">
         <View className="bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-lg">
           <Text className="font-secondary text-gray-500 dark:text-gray-400 text-xs mb-0.5">
             Level
