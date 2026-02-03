@@ -4,6 +4,7 @@ import { PULLUP_PROGRAM_EXERCISES } from "@/data/pullup-program";
 import { formatSetDisplay } from "@/lib/formatters";
 import { useWorkoutStore } from "@/store";
 import { WorkoutSession } from "@/types";
+import { Ionicons } from "@expo/vector-icons";
 import { useEffect } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -34,10 +35,17 @@ function isTimeExercise(exerciseName: string): boolean {
 function formatDuration(seconds: number): string {
   const hrs = Math.floor(seconds / 3600);
   const mins = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
   if (hrs > 0) {
     return `${hrs}h ${mins}m`;
   }
-  return `${mins}m`;
+  if (mins > 0 && secs > 0) {
+    return `${mins}m ${secs}s`;
+  }
+  if (mins > 0) {
+    return `${mins}m`;
+  }
+  return `${secs}s`;
 }
 
 function formatDate(timestamp: number): string {
@@ -48,6 +56,83 @@ function formatDate(timestamp: number): string {
   });
 }
 
+/**
+ * Card for timed follow-along workouts (like "5 Min Killer Abs")
+ */
+function TimedWorkoutCard({ workout }: { workout: WorkoutSession }) {
+  const completionPercent = workout.totalTimePlanned
+    ? Math.round(
+        ((workout.totalTimeCompleted || 0) / workout.totalTimePlanned) * 100,
+      )
+    : 100;
+
+  return (
+    <Card className="mb-3">
+      <View className="flex-row justify-between items-center mb-2">
+        <View className="flex-1">
+          <Text className="font-primarySemiBold text-lg text-gray-900 dark:text-white">
+            {formatDate(workout.startedAt)}
+          </Text>
+          <Text className="font-secondaryMedium text-xs text-primary-600 dark:text-primary-400 mt-0.5">
+            {workout.programName}
+          </Text>
+        </View>
+        <Text className="font-secondaryMedium text-gray-500">
+          {formatDuration(workout.duration)}
+        </Text>
+      </View>
+
+      {/* Progression summary */}
+      {workout.progressionSummary && (
+        <View className="bg-primary-50 dark:bg-primary-900/20 rounded-lg px-3 py-2 mb-3">
+          <Text className="font-secondary text-sm text-primary-700 dark:text-primary-300">
+            {workout.progressionSummary}
+          </Text>
+        </View>
+      )}
+
+      {/* Time stats for timed workouts */}
+      <View className="flex-row gap-4">
+        <View>
+          <Text className="font-secondary text-sm text-gray-500">Planned</Text>
+          <Text className="font-primarySemiBold text-gray-900 dark:text-white">
+            {formatDuration(workout.totalTimePlanned || 0)}
+          </Text>
+        </View>
+        <View>
+          <Text className="font-secondary text-sm text-gray-500">
+            Completed
+          </Text>
+          <Text className="font-primarySemiBold text-gray-900 dark:text-white">
+            {formatDuration(workout.totalTimeCompleted || 0)}
+          </Text>
+        </View>
+        <View>
+          <Text className="font-secondary text-sm text-gray-500">
+            Completion
+          </Text>
+          <View className="flex-row items-center">
+            <Text className="font-primarySemiBold text-gray-900 dark:text-white">
+              {completionPercent}%
+            </Text>
+            {completionPercent >= 100 && (
+              <Ionicons
+                name="checkmark-circle"
+                size={16}
+                color="#22c55e"
+                style={{ marginLeft: 4 }}
+              />
+            )}
+          </View>
+        </View>
+      </View>
+    </Card>
+  );
+}
+
+/**
+ * Card for regular strength workouts (sets/reps/weight)
+ */
 function WorkoutCard({ workout }: { workout: WorkoutSession }) {
   const totalSets = workout.exercises.reduce(
     (acc, ex) => acc + ex.sets.length,
@@ -153,9 +238,13 @@ export default function HistoryScreen() {
             </Text>
           </Card>
         ) : (
-          pastWorkouts.map((workout) => (
-            <WorkoutCard key={workout.id} workout={workout} />
-          ))
+          pastWorkouts.map((workout) =>
+            workout.isTimedWorkout ? (
+              <TimedWorkoutCard key={workout.id} workout={workout} />
+            ) : (
+              <WorkoutCard key={workout.id} workout={workout} />
+            ),
+          )
         )}
       </ScrollView>
     </SafeAreaView>

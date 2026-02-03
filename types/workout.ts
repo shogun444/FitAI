@@ -46,6 +46,11 @@ export interface WorkoutSession {
   programName?: string;
   sessionIndex?: number;
   progressionSummary?: string; // e.g., "2 lifts increased weight"
+
+  // Timed workout metadata (for follow-along workouts like "5 Min Killer Abs")
+  isTimedWorkout?: boolean;
+  totalTimePlanned?: number; // in seconds
+  totalTimeCompleted?: number; // in seconds
 }
 
 export interface TimerState {

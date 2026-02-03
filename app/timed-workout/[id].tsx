@@ -87,7 +87,46 @@ export default function TimedWorkoutOverviewScreen() {
             </View>
           </Card>
         </View>
-
+        <Card className="mb-6">
+          <Text className="font-primarySemiBold text-lg text-gray-900 dark:text-white mb-2">
+            How It Works
+          </Text>
+          <View className="gap-2">
+            <View className="flex-row items-start">
+              <Ionicons
+                name="play-circle"
+                size={20}
+                color="#65a30d"
+                style={{ marginRight: 8, marginTop: 2 }}
+              />
+              <Text className="font-secondary text-gray-600 dark:text-gray-400 flex-1">
+                Tap "Start Workout" and follow along with the timer
+              </Text>
+            </View>
+            <View className="flex-row items-start">
+              <Ionicons
+                name="timer"
+                size={20}
+                color="#65a30d"
+                style={{ marginRight: 8, marginTop: 2 }}
+              />
+              <Text className="font-secondary text-gray-600 dark:text-gray-400 flex-1">
+                Each exercise auto-advances when the timer reaches zero
+              </Text>
+            </View>
+            <View className="flex-row items-start">
+              <Ionicons
+                name="pause-circle"
+                size={20}
+                color="#f59e0b"
+                style={{ marginRight: 8, marginTop: 2 }}
+              />
+              <Text className="font-secondary text-gray-600 dark:text-gray-400 flex-1">
+                You can pause anytime if you need a break
+              </Text>
+            </View>
+          </View>
+        </Card>
         {/* Workout Structure */}
         <Card className="mb-4">
           <Text className="font-primarySemiBold text-lg text-gray-900 dark:text-white mb-3">
@@ -136,46 +175,6 @@ export default function TimedWorkoutOverviewScreen() {
         </Card>
 
         {/* Instructions */}
-        <Card className="mb-6">
-          <Text className="font-primarySemiBold text-lg text-gray-900 dark:text-white mb-2">
-            How It Works
-          </Text>
-          <View className="gap-2">
-            <View className="flex-row items-start">
-              <Ionicons
-                name="play-circle"
-                size={20}
-                color="#65a30d"
-                style={{ marginRight: 8, marginTop: 2 }}
-              />
-              <Text className="font-secondary text-gray-600 dark:text-gray-400 flex-1">
-                Tap "Start Workout" and follow along with the timer
-              </Text>
-            </View>
-            <View className="flex-row items-start">
-              <Ionicons
-                name="timer"
-                size={20}
-                color="#65a30d"
-                style={{ marginRight: 8, marginTop: 2 }}
-              />
-              <Text className="font-secondary text-gray-600 dark:text-gray-400 flex-1">
-                Each exercise auto-advances when the timer reaches zero
-              </Text>
-            </View>
-            <View className="flex-row items-start">
-              <Ionicons
-                name="pause-circle"
-                size={20}
-                color="#f59e0b"
-                style={{ marginRight: 8, marginTop: 2 }}
-              />
-              <Text className="font-secondary text-gray-600 dark:text-gray-400 flex-1">
-                You can pause anytime if you need a break
-              </Text>
-            </View>
-          </View>
-        </Card>
       </ScrollView>
 
       {/* Start Button */}

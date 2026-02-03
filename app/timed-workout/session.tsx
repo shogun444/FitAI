@@ -1,7 +1,7 @@
 import { TimedWorkoutSession } from "@/components/guided-session";
 import { formatDuration, getTimedWorkoutById } from "@/data/timed-workouts";
 import { saveWorkout } from "@/lib/storage";
-import { Exercise, WorkoutSession, WorkoutSet } from "@/types";
+import { WorkoutSession } from "@/types";
 import * as Crypto from "expo-crypto";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useRef } from "react";
@@ -27,36 +27,24 @@ export default function TimedWorkoutSessionScreen() {
     const endTime = Date.now();
     const duration = Math.floor((endTime - startTimeRef.current) / 1000);
 
-    // Map timed workout to WorkoutSession for history
-    // Store duration as reps (UI handles display for time-based exercises)
-    const exercises: Exercise[] = program.steps
-      .filter((step) => step.type === "exercise")
-      .map((step) => ({
-        id: Crypto.randomUUID(),
-        name: step.name,
-        sets: [
-          {
-            id: Crypto.randomUUID(),
-            reps: step.duration, // Store time as reps (displayed as seconds in history)
-            weight: null, // Bodyweight exercise
-            completed: true,
-            isDefault: false,
-            createdAt: endTime,
-          } as WorkoutSet,
-        ],
-        createdAt: startTimeRef.current,
-      }));
-
+    // For timed workouts, we store time-based data only (no fake sets/reps/weight)
     const session: WorkoutSession = {
       id: Crypto.randomUUID(),
-      exercises,
+      exercises: [], // No exercises for timed workouts - we track time only
       startedAt: startTimeRef.current,
       endedAt: endTime,
       duration: duration > 0 ? duration : program.totalDuration,
+
+      // Program metadata
       isProgramWorkout: true,
       programId: program.id,
       programName: program.name,
       progressionSummary: `${formatDuration(program.totalDuration)} follow-along`,
+
+      // Timed workout specific fields
+      isTimedWorkout: true,
+      totalTimePlanned: program.totalDuration,
+      totalTimeCompleted: duration > 0 ? duration : program.totalDuration,
     };
 
     // Build exercise data for summary page (same format as pullup program)
