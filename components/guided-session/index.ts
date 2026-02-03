@@ -13,6 +13,7 @@
  * - CompletedSetsList: List of completed sets with remove
  * - SessionActions: Next Set / Complete Session buttons
  * - TimeExerciseSession: Full session flow for time-based exercises
+ * - TimedWorkoutSession: Follow-along timed workout with auto-advance
  */
 
 export { CompletedSetsList } from "./CompletedSetsList";
@@ -22,4 +23,5 @@ export { SessionActions } from "./SessionActions";
 export { SessionHeader } from "./SessionHeader";
 export { SetInput } from "./SetInput";
 export { TargetGoalCard } from "./TargetGoalCard";
+export { TimedWorkoutSession } from "./TimedWorkoutSession";
 export { TimeExerciseSession } from "./TimeExerciseSession";

@@ -1,6 +1,7 @@
 import { Button, Card, Heading, Subheading } from "@/components";
 import { PROGRAMS } from "@/data/programs";
 import { PULLUP_PROGRAM } from "@/data/pullup-program";
+import { formatDuration, TIMED_WORKOUTS } from "@/data/timed-workouts";
 import { useProgramInstance } from "@/hooks/useProgramInstance";
 import { usePullupProgram } from "@/hooks/usePullupProgram";
 import { useWorkoutStore } from "@/store";
@@ -231,6 +232,47 @@ export default function WorkoutTabScreen() {
             </Pressable>
           );
         })}
+
+        {/* Timed Follow-Along Workouts */}
+        {TIMED_WORKOUTS.map((timedWorkout) => (
+          <Pressable
+            key={timedWorkout.id}
+            onPress={() =>
+              router.push(`/timed-workout/${timedWorkout.id}` as Href)
+            }
+            className="mb-3"
+          >
+            <Card>
+              <View className="flex-row items-start">
+                <View className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-xl items-center justify-center mr-3">
+                  <Ionicons name="flame" size={24} color="#f59e0b" />
+                </View>
+                <View className="flex-1">
+                  <View className="flex-row items-center mb-1">
+                    <Text className="font-primarySemiBold text-base text-gray-900 dark:text-white">
+                      {timedWorkout.name}
+                    </Text>
+                    <View className="bg-primary/20 px-2 py-0.5 rounded-full ml-2">
+                      <Text className="font-secondaryMedium text-xs text-primary">
+                        FREE
+                      </Text>
+                    </View>
+                  </View>
+                  <Text
+                    className="font-secondary text-sm text-gray-500 mb-1"
+                    numberOfLines={2}
+                  >
+                    {timedWorkout.description}
+                  </Text>
+                  <Text className="font-secondary text-xs text-amber-600">
+                    {formatDuration(timedWorkout.totalDuration)} • Follow Along
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+              </View>
+            </Card>
+          </Pressable>
+        ))}
 
         {/* Spacer before history */}
         <View className="h-2" />
