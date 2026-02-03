@@ -1,4 +1,9 @@
-import { Button, CancelWorkoutModal, Heading, Subheading } from "@/components";
+import {
+  Button,
+  CancelWorkoutModal,
+  ScreenHeader,
+  Subheading,
+} from "@/components";
 import { InlineRestTimer } from "@/components/programs";
 import { AddExerciseForm, ExerciseItem } from "@/components/workout";
 import { useGlobalRestTimer } from "@/contexts/RestTimerContext";
@@ -58,6 +63,17 @@ export default function WorkoutSessionScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background-light dark:bg-background-dark">
+      {/* Header - unified ScreenHeader with duration */}
+      <View className="flex-row items-center justify-between pr-6">
+        <ScreenHeader title="Workout" showBackButton={false} />
+        {/* Workout duration */}
+        <View className="bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded-lg">
+          <Subheading className="text-primary text-base">
+            {formattedTime}
+          </Subheading>
+        </View>
+      </View>
+
       {/* Fixed Rest Timer - stays visible when scrolling */}
       <View className="z-10 px-4 pt-2">
         {isTimerActive ? (
@@ -76,17 +92,6 @@ export default function WorkoutSessionScreen() {
       </View>
 
       <ScrollView className="flex-1 p-4">
-        {/* Header */}
-        <View className="flex-row justify-between items-center mb-4">
-          <Heading className="text-2xl">Workout</Heading>
-          {/* Workout duration */}
-          <View className="bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded-lg">
-            <Subheading className="text-primary text-base">
-              {formattedTime}
-            </Subheading>
-          </View>
-        </View>
-
         {/* Add Exercise */}
         <AddExerciseForm />
 

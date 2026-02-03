@@ -1,10 +1,9 @@
 import { ProgramAdviceSection, ProgramHeader } from "@/components/programs";
-import { Button, Heading } from "@/components/ui";
+import { Button, ScreenHeader } from "@/components/ui";
 import { getProgramById } from "@/data/programs";
 import { useProgramInstance } from "@/hooks/useProgramInstance";
-import { Ionicons } from "@expo/vector-icons";
 import { Href, useLocalSearchParams, useRouter } from "expo-router";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 /**
@@ -40,17 +39,8 @@ export default function ProgramDetailScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background-light dark:bg-background-dark">
-      {/* Header */}
-      <View className="flex-row items-center px-6 pt-4 pb-2">
-        <Pressable
-          onPress={() => router.back()}
-          className="mr-4 p-1"
-          accessibilityLabel="Go back"
-        >
-          <Ionicons name="arrow-back" size={24} color="#9ca3af" />
-        </Pressable>
-        <Heading className="text-2xl">Program</Heading>
-      </View>
+      {/* Header - using unified ScreenHeader component */}
+      <ScreenHeader title={program.name} />
 
       <ScrollView className="flex-1" contentContainerClassName="px-6 pb-8">
         {/* Program Header */}

@@ -1,4 +1,4 @@
-import { Button, Card, Heading, Subheading } from "@/components";
+import { Button, Card, Heading, ScreenHeader, Subheading } from "@/components";
 import {
   PULLUP_PROGRAM,
   PULLUP_PROGRAM_EXERCISES,
@@ -59,6 +59,9 @@ export default function PullupProgramOverviewScreen() {
   if (isCompleted) {
     return (
       <SafeAreaView className="flex-1 bg-background-light dark:bg-background-dark">
+        {/* Header - unified ScreenHeader component */}
+        <ScreenHeader title={PULLUP_PROGRAM.name} />
+
         <ScrollView className="flex-1 p-4">
           <View className="items-center py-8">
             <View className="w-24 h-24 bg-primary rounded-full items-center justify-center mb-6">
@@ -68,9 +71,6 @@ export default function PullupProgramOverviewScreen() {
             <Subheading className="text-center mb-2">
               You've completed all {targetSessions} sessions!
             </Subheading>
-            <Text className="font-secondary text-gray-500 text-center">
-              "Unlock Your First Pull-up"
-            </Text>
           </View>
 
           <Card className="mb-4">
@@ -126,12 +126,12 @@ export default function PullupProgramOverviewScreen() {
 
     return (
       <SafeAreaView className="flex-1 bg-background-light dark:bg-background-dark">
+        {/* Header - unified ScreenHeader component */}
+        <ScreenHeader title={PULLUP_PROGRAM.name} />
+
         <ScrollView className="flex-1 p-4">
-          {/* Header */}
+          {/* Session Info */}
           <View className="mb-6">
-            <Text className="font-secondary text-primary text-sm mb-1">
-              {PULLUP_PROGRAM.name}
-            </Text>
             <Heading className="mb-2">
               Session{" "}
               {hasActiveSession
@@ -335,13 +335,15 @@ export default function PullupProgramOverviewScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background-light dark:bg-background-dark">
+      {/* Header - unified ScreenHeader component */}
+      <ScreenHeader title={PULLUP_PROGRAM.name} />
+
       <ScrollView className="flex-1 p-4">
         {/* Hero Section */}
-        <View className="items-center py-8">
+        <View className="items-center py-6">
           <View className="w-20 h-20 bg-primary/20 rounded-full items-center justify-center mb-4">
             <Ionicons name="fitness" size={40} color="#c9f158" />
           </View>
-          <Heading className="text-center mb-2">{PULLUP_PROGRAM.name}</Heading>
           <Subheading className="text-center">
             Your guided path to your first pull-up
           </Subheading>

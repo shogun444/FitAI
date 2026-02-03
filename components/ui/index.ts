@@ -11,6 +11,7 @@ export { CardTitle } from "./CardTitle";
 export { EmptyState } from "./EmptyState";
 export { Heading } from "./Heading";
 export { NumberInput } from "./NumberInput";
+export { ScreenHeader } from "./ScreenHeader";
 export { SectionTitle } from "./SectionTitle";
 export { SelectGroup } from "./SelectGroup";
 export { SessionConflictModal } from "./SessionConflictModal";

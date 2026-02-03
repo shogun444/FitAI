@@ -1,4 +1,4 @@
-import { Button, Heading, Subheading } from "@/components";
+import { Button, ScreenHeader, Subheading } from "@/components";
 import { SessionConflictModal } from "@/components/ui";
 import { EXERCISE_CATALOG } from "@/data/exercises";
 import { useSessionGuardWithConfirmation } from "@/hooks/useSessionGuardWithConfirmation";
@@ -88,8 +88,10 @@ export default function SelectExercisesScreen() {
       {/* Session Conflict Modal */}
       <SessionConflictModal {...modalProps} />
 
+      {/* Header - unified ScreenHeader component */}
+      <ScreenHeader title="Start Workout" />
+
       <ScrollView className="flex-1 p-4">
-        <Heading className="mb-2">Select Exercises</Heading>
         <Subheading className="mb-4">
           Choose at least {MIN_EXERCISES_REQUIRED} exercises to begin
         </Subheading>

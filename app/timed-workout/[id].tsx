@@ -1,4 +1,4 @@
-import { Button, Card, Heading, Subheading } from "@/components";
+import { Button, Card, ScreenHeader, Subheading } from "@/components";
 import { formatDuration, getTimedWorkoutById } from "@/data/timed-workouts";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -45,13 +45,15 @@ export default function TimedWorkoutOverviewScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background-light dark:bg-background-dark">
-      <ScrollView className="flex-1 p-4">
-        {/* Header */}
-        <View className="items-center py-8">
+      {/* Header - unified ScreenHeader component */}
+      <ScreenHeader title={program.name} />
+
+      <ScrollView className="flex-1 px-4">
+        {/* Hero Section */}
+        <View className="items-center py-6">
           <View className="w-20 h-20 bg-primary/20 rounded-full items-center justify-center mb-4">
             <Ionicons name="flame" size={40} color="#c9f158" />
           </View>
-          <Heading className="text-center mb-2">{program.name}</Heading>
           <Subheading className="text-center">
             {formatDuration(program.totalDuration)} Follow-Along
           </Subheading>

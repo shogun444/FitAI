@@ -1,4 +1,4 @@
-import { Card, Heading, Subheading } from "@/components";
+import { Card, ScreenHeader, Subheading } from "@/components";
 import { EXERCISE_CATALOG } from "@/data/exercises";
 import { PULLUP_PROGRAM_EXERCISES } from "@/data/pullup-program";
 import { formatSetDisplay } from "@/lib/formatters";
@@ -227,8 +227,10 @@ export default function HistoryScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background-light dark:bg-background-dark">
+      {/* Header - unified ScreenHeader component */}
+      <ScreenHeader title="Workout History" />
+
       <ScrollView className="flex-1 p-4">
-        <Heading className="mb-2">History</Heading>
         <Subheading className="mb-6">Your past workouts</Subheading>
 
         {pastWorkouts.length === 0 ? (

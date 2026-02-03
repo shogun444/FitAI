@@ -6,6 +6,9 @@ export { SectionTitle } from "./ui/SectionTitle";
 export { Subheading } from "./ui/Subheading";
 export { WorkoutStat } from "./ui/WorkoutStat";
 
+// UI Components - Layout
+export { ScreenHeader } from "./ui/ScreenHeader";
+
 // UI Components - Other
 export { Button } from "./ui/Button";
 export { CancelWorkoutModal } from "./ui/CancelWorkoutModal";
