@@ -8,13 +8,30 @@ export default function TimedWorkoutLayout() {
   return (
     <Stack
       screenOptions={{
-        headerShown: false,
+        headerShown: true,
+        headerBackTitle: "Back",
         animation: "slide_from_right",
       }}
     >
-      <Stack.Screen name="[id]" />
-      <Stack.Screen name="session" />
-      <Stack.Screen name="summary" />
+      <Stack.Screen
+        name="[id]"
+        options={({ route }) => ({
+          title: (route.params as { title?: string })?.title ?? "Workout",
+        })}
+      />
+      <Stack.Screen
+        name="session"
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="summary"
+        options={{
+          title: "Workout Complete",
+          headerBackVisible: false,
+        }}
+      />
     </Stack>
   );
 }

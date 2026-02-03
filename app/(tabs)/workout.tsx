@@ -238,7 +238,10 @@ export default function WorkoutTabScreen() {
           <Pressable
             key={timedWorkout.id}
             onPress={() =>
-              router.push(`/timed-workout/${timedWorkout.id}` as Href)
+              router.push({
+                pathname: `/timed-workout/${timedWorkout.id}`,
+                params: { title: timedWorkout.name },
+              } as Href)
             }
             className="mb-3"
           >

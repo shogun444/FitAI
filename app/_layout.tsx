@@ -118,6 +118,7 @@ function RootLayoutContent() {
         <Stack.Screen name="workout" options={{ headerShown: false }} />
         <Stack.Screen name="program" options={{ headerShown: false }} />
         <Stack.Screen name="pullup-program" options={{ headerShown: false }} />
+        <Stack.Screen name="timed-workout" options={{ headerShown: false }} />
         <Stack.Screen
           name="modal"
           options={{ presentation: "modal", title: "Modal" }}
