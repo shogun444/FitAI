@@ -115,7 +115,7 @@ export function ActivePullupProgramCard({
             color="white"
             style={{ marginRight: 8 }}
           />
-          <Text className="font-primarySemiBold text-white text-base">
+          <Text className="font-secondaryMedium text-white text-base">
             Continue Session
           </Text>
         </TouchableOpacity>
@@ -130,7 +130,7 @@ export function ActivePullupProgramCard({
             color="white"
             style={{ marginRight: 8 }}
           />
-          <Text className="font-primarySemiBold text-white text-base">
+          <Text className="font-secondaryMedium text-white text-base">
             Start Next Session
           </Text>
         </TouchableOpacity>

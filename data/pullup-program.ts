@@ -1,3 +1,4 @@
+import { Program, ProgramAdvice } from "@/data/programs";
 import { PullupProgramExercise } from "@/types/pullup-program";
 
 /**
@@ -17,6 +18,54 @@ export const PULLUP_PROGRAM = {
   type: "FREE" as const,
   targetSessions: 20, // Total sessions to complete the program
 } as const;
+
+// ============================================
+// Recovery Guidelines
+// ============================================
+
+const PULLUP_PROGRAM_ADVICE: ProgramAdvice[] = [
+  {
+    id: "frequency",
+    title: "Training Frequency",
+    content:
+      "This program is designed for 3-4 sessions per week with at least one rest day between sessions. Your muscles need time to recover and grow stronger. Consistency beats intensity—show up regularly.",
+  },
+  {
+    id: "fatigue",
+    title: "Fatigue Management",
+    content:
+      "Listen to your body. If your grip feels weak or your muscles are still sore, take an extra rest day. Overtraining will slow your progress. Quality reps matter more than quantity.",
+  },
+  {
+    id: "sleep",
+    title: "Sleep & Recovery",
+    content:
+      "Aim for 7-9 hours of sleep per night. Sleep is when your body repairs muscle tissue and builds strength. Poor sleep will directly impact your pull-up progress.",
+  },
+  {
+    id: "protein",
+    title: "Protein Intake",
+    content:
+      "Ensure you're eating enough protein to support muscle growth—aim for 1.6-2.2g per kg of bodyweight daily. Check the Nutrition section to calculate your recommended intake.",
+  },
+];
+
+/**
+ * Program-compatible object for use with ProgramHeader component
+ * This allows the pullup program to render using the same intro card
+ * as Weighted Calisthenics Strength.
+ */
+export const PULLUP_PROGRAM_INFO: Program = {
+  id: PULLUP_PROGRAM.id,
+  name: PULLUP_PROGRAM.name,
+  tagline: "Your path to your first pull-up",
+  description: PULLUP_PROGRAM.description,
+  frequency: "3-4 sessions per week",
+  duration: `${PULLUP_PROGRAM.targetSessions} sessions`,
+  level: "beginner",
+  isPaid: false,
+  advice: PULLUP_PROGRAM_ADVICE,
+};
 
 /**
  * Program Exercises - ALL performed every session

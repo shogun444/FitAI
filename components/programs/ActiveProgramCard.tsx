@@ -190,7 +190,7 @@ export function ActiveProgramCard({
               color="white"
               style={{ marginRight: 8 }}
             />
-            <Text className="font-primarySemiBold text-white text-base">
+            <Text className="font-secondaryMedium text-white text-base">
               Continue Workout
             </Text>
           </TouchableOpacity>
@@ -205,7 +205,7 @@ export function ActiveProgramCard({
               color="white"
               style={{ marginRight: 8 }}
             />
-            <Text className="font-primarySemiBold text-white text-base">
+            <Text className="font-secondaryMedium text-white text-base">
               Start Session
             </Text>
           </TouchableOpacity>
