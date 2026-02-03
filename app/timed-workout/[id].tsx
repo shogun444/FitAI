@@ -1,5 +1,9 @@
 import { Button, Card, ScreenHeader, Subheading } from "@/components";
-import { formatDuration, getTimedWorkoutById } from "@/data/timed-workouts";
+import { ProgramHeader } from "@/components/programs";
+import {
+  getTimedWorkoutById,
+  KILLER_ABS_5MIN_INFO,
+} from "@/data/timed-workouts";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ScrollView, Text, View } from "react-native";
@@ -37,59 +41,17 @@ export default function TimedWorkoutOverviewScreen() {
     } as any);
   };
 
-  // Count exercises and rest periods
-  const exerciseCount = program.steps.filter(
-    (s) => s.type === "exercise",
-  ).length;
-  const restCount = program.steps.filter((s) => s.type === "rest").length;
-
   return (
     <SafeAreaView className="flex-1 bg-background-light dark:bg-background-dark">
       {/* Header - unified ScreenHeader component */}
       <ScreenHeader title={program.name} />
 
-      <ScrollView className="flex-1 px-4">
-        {/* Hero Section */}
-        <View className="items-center py-6">
-          <View className="w-20 h-20 bg-primary/20 rounded-full items-center justify-center mb-4">
-            <Ionicons name="flame" size={40} color="#c9f158" />
-          </View>
-          <Subheading className="text-center">
-            {formatDuration(program.totalDuration)} Follow-Along
-          </Subheading>
-        </View>
+      <ScrollView className="flex-1" contentContainerClassName="px-6 pb-8">
+        {/* Program Header - same intro card as other programs */}
+        <ProgramHeader program={KILLER_ABS_5MIN_INFO} />
 
-        {/* Description */}
+        {/* How It Works */}
         <Card className="mb-4">
-          <Text className="font-secondary text-gray-600 dark:text-gray-400 leading-6">
-            {program.description}
-          </Text>
-        </Card>
-
-        {/* Stats */}
-        <View className="flex-row mb-4">
-          <Card className="flex-1 mr-2">
-            <View className="items-center">
-              <Text className="font-primaryBold text-2xl text-primary">
-                {exerciseCount}
-              </Text>
-              <Text className="font-secondary text-gray-500 text-sm">
-                Exercises
-              </Text>
-            </View>
-          </Card>
-          <Card className="flex-1 ml-2">
-            <View className="items-center">
-              <Text className="font-primaryBold text-2xl text-amber-500">
-                {restCount}
-              </Text>
-              <Text className="font-secondary text-gray-500 text-sm">
-                Rest Periods
-              </Text>
-            </View>
-          </Card>
-        </View>
-        <Card className="mb-6">
           <Text className="font-primarySemiBold text-lg text-gray-900 dark:text-white mb-2">
             How It Works
           </Text>
@@ -129,60 +91,10 @@ export default function TimedWorkoutOverviewScreen() {
             </View>
           </View>
         </Card>
-        {/* Workout Structure */}
-        <Card className="mb-4">
-          <Text className="font-primarySemiBold text-lg text-gray-900 dark:text-white mb-3">
-            Workout Structure
-          </Text>
-          {program.steps.map((step, index) => (
-            <View
-              key={index}
-              className={`flex-row items-center py-3 ${
-                index < program.steps.length - 1
-                  ? "border-b border-gray-100 dark:border-gray-800"
-                  : ""
-              }`}
-            >
-              <View
-                className={`w-8 h-8 rounded-full items-center justify-center mr-3 ${
-                  step.type === "rest"
-                    ? "bg-amber-100 dark:bg-amber-900/30"
-                    : "bg-primary-100 dark:bg-primary-900/30"
-                }`}
-              >
-                <Text
-                  className={`font-secondaryMedium text-sm ${
-                    step.type === "rest" ? "text-amber-600" : "text-primary-600"
-                  }`}
-                >
-                  {index + 1}
-                </Text>
-              </View>
-              <View className="flex-1">
-                <Text
-                  className={`font-secondaryMedium ${
-                    step.type === "rest"
-                      ? "text-amber-600 dark:text-amber-400"
-                      : "text-gray-900 dark:text-white"
-                  }`}
-                >
-                  {step.name}
-                </Text>
-              </View>
-              <Text className="font-secondary text-gray-500">
-                {step.duration}s
-              </Text>
-            </View>
-          ))}
-        </Card>
 
-        {/* Instructions */}
-      </ScrollView>
-
-      {/* Start Button */}
-      <View className="px-4 pb-6">
+        {/* Start Button */}
         <Button title="Start Workout" onPress={handleStartWorkout} />
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }

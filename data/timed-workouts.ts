@@ -5,6 +5,7 @@
  * and rest periods that auto-advance.
  */
 
+import { Program } from "@/data/programs";
 import { TimedWorkoutProgram } from "@/types/timed-workout";
 
 // ============================================
@@ -31,6 +32,23 @@ export const KILLER_ABS_5MIN: TimedWorkoutProgram = {
     { type: "rest", name: "Rest", duration: 10 },
     { type: "exercise", name: "Hollow Body Hold", duration: 60 },
   ],
+};
+
+/**
+ * Program-compatible object for use with ProgramHeader component
+ * This allows timed workouts to render using the same intro card
+ * as other programs for visual consistency.
+ */
+export const KILLER_ABS_5MIN_INFO: Program = {
+  id: KILLER_ABS_5MIN.id,
+  name: KILLER_ABS_5MIN.name,
+  tagline: "Quick & Intense Core Blast",
+  description: KILLER_ABS_5MIN.description,
+  frequency: "Anytime",
+  duration: "5 minutes",
+  level: "beginner",
+  isPaid: false,
+  advice: [],
 };
 
 // ============================================
