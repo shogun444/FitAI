@@ -18,7 +18,9 @@ interface TimedWorkoutSessionProps {
   onCancel: () => void;
 }
 
-type SessionPhase = "ready" | "running" | "paused" | "complete";
+type SessionPhase = "ready" | "countdown" | "running" | "paused" | "complete";
+
+const GET_READY_SECONDS = 3;
 
 // ============================================
 // Countdown Circle Display
@@ -169,8 +171,11 @@ export function TimedWorkoutSession({
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [remaining, setRemaining] = useState(program.steps[0]?.duration ?? 0);
   const [totalElapsed, setTotalElapsed] = useState(0);
+  const [countdownRemaining, setCountdownRemaining] =
+    useState(GET_READY_SECONDS);
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef<number | null>(null);
 
   const currentStep = program.steps[currentStepIndex];
@@ -204,6 +209,34 @@ export function TimedWorkoutSession({
     setRemaining(program.steps[nextIndex].duration);
   }, [currentStepIndex, program.steps, clearTimer, onComplete]);
 
+  // Countdown effect (3-2-1 before workout starts)
+  useEffect(() => {
+    if (phase !== "countdown") return;
+
+    countdownRef.current = setInterval(() => {
+      setCountdownRemaining((prev) => {
+        if (prev <= 1) {
+          // Countdown complete, start workout
+          if (countdownRef.current) {
+            clearInterval(countdownRef.current);
+            countdownRef.current = null;
+          }
+          startTimeRef.current = Date.now();
+          setPhase("running");
+          return GET_READY_SECONDS;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => {
+      if (countdownRef.current) {
+        clearInterval(countdownRef.current);
+        countdownRef.current = null;
+      }
+    };
+  }, [phase]);
+
   // Main timer effect
   useEffect(() => {
     if (phase !== "running") return;
@@ -234,8 +267,8 @@ export function TimedWorkoutSession({
   // ============================================
 
   const handleStart = () => {
-    startTimeRef.current = Date.now();
-    setPhase("running");
+    setCountdownRemaining(GET_READY_SECONDS);
+    setPhase("countdown");
   };
 
   const handlePause = () => {
@@ -249,8 +282,73 @@ export function TimedWorkoutSession({
 
   const handleCancel = () => {
     clearTimer();
+    if (countdownRef.current) {
+      clearInterval(countdownRef.current);
+      countdownRef.current = null;
+    }
     onCancel();
   };
+
+  // ============================================
+  // Render: Countdown Phase (Get Ready)
+  // ============================================
+
+  if (phase === "countdown") {
+    return (
+      <SafeAreaView className="flex-1 bg-background-light dark:bg-background-dark">
+        <View className="flex-1 items-center justify-center px-4">
+          {/* Get Ready Message */}
+          <Text className="font-primaryBold text-2xl text-gray-900 dark:text-white mb-2">
+            Get Ready!
+          </Text>
+          <Text className="font-secondary text-gray-500 mb-8">
+            {program.name}
+          </Text>
+
+          {/* Countdown Circle */}
+          <View className="items-center justify-center">
+            <View
+              style={{ width: 200, height: 200 }}
+              className="items-center justify-center"
+            >
+              <View
+                style={{
+                  width: 200,
+                  height: 200,
+                  borderRadius: 100,
+                  borderWidth: 8,
+                  borderColor: "rgba(101, 163, 13, 0.3)",
+                }}
+                className="absolute"
+              />
+              <View
+                style={{
+                  width: 184,
+                  height: 184,
+                  borderRadius: 92,
+                }}
+                className="bg-primary-50 dark:bg-primary-900/20 items-center justify-center"
+              >
+                <Text className="font-secondarySemiBold text-8xl text-primary-600">
+                  {countdownRemaining}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* First exercise preview */}
+          <View className="mt-8 bg-gray-100 dark:bg-gray-800 rounded-xl px-6 py-3">
+            <Text className="font-secondary text-gray-500 text-sm text-center">
+              First up
+            </Text>
+            <Text className="font-secondaryMedium text-gray-900 dark:text-white text-center">
+              {program.steps[0]?.name} – {program.steps[0]?.duration}s
+            </Text>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   // ============================================
   // Render: Ready Phase

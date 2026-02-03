@@ -1,5 +1,5 @@
 import { TimedWorkoutSession } from "@/components/guided-session";
-import { getTimedWorkoutById } from "@/data/timed-workouts";
+import { formatDuration, getTimedWorkoutById } from "@/data/timed-workouts";
 import { saveWorkout } from "@/lib/storage";
 import { Exercise, WorkoutSession, WorkoutSet } from "@/types";
 import * as Crypto from "expo-crypto";
@@ -28,6 +28,7 @@ export default function TimedWorkoutSessionScreen() {
     const duration = Math.floor((endTime - startTimeRef.current) / 1000);
 
     // Map timed workout to WorkoutSession for history
+    // Store duration as reps (UI handles display for time-based exercises)
     const exercises: Exercise[] = program.steps
       .filter((step) => step.type === "exercise")
       .map((step) => ({
@@ -36,8 +37,8 @@ export default function TimedWorkoutSessionScreen() {
         sets: [
           {
             id: Crypto.randomUUID(),
-            reps: null,
-            weight: null,
+            reps: step.duration, // Store time as reps (displayed as seconds in history)
+            weight: null, // Bodyweight exercise
             completed: true,
             isDefault: false,
             createdAt: endTime,
@@ -55,7 +56,16 @@ export default function TimedWorkoutSessionScreen() {
       isProgramWorkout: true,
       programId: program.id,
       programName: program.name,
+      progressionSummary: `${formatDuration(program.totalDuration)} follow-along`,
     };
+
+    // Build exercise data for summary page (same format as pullup program)
+    const exerciseData = program.steps
+      .filter((step) => step.type === "exercise")
+      .map((step) => ({
+        name: step.name,
+        sets: [{ time: step.duration }],
+      }));
 
     // Save to workout history
     await saveWorkout(session);
@@ -66,6 +76,7 @@ export default function TimedWorkoutSessionScreen() {
       params: {
         id: program.id,
         duration: duration.toString(),
+        exerciseData: JSON.stringify(exerciseData),
       },
     } as any);
   };
