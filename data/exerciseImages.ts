@@ -15,6 +15,7 @@ export const EXERCISE_IMAGES: Record<string, any> = {
   deadlift: require("@/assets/images/deadlift.png"),
   plank: require("@/assets/images/plank.png"),
   hollowbody: require("@/assets/images/hollowbody.png"),
+  "russian-twist": require("@/assets/images/russian-twist.png"),
 };
 
 /**

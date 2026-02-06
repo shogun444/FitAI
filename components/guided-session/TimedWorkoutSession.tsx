@@ -386,8 +386,13 @@ export function TimedWorkoutSession({
                 {getExerciseImage(step.image) ? (
                   <Image
                     source={getExerciseImage(step.image)}
-                    style={{ width: 32, height: 32, borderRadius: 6, marginRight: 10 }}
-                    contentFit="cover"
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 6,
+                      marginRight: 10,
+                    }}
+                    contentFit="contain"
                   />
                 ) : (
                   <View
@@ -506,7 +511,7 @@ export function TimedWorkoutSession({
                 borderRadius: 12,
                 marginTop: 12,
               }}
-              contentFit="cover"
+              contentFit="contain"
             />
           )}
         </View>

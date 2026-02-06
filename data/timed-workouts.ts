@@ -27,7 +27,12 @@ export const KILLER_ABS_5MIN: TimedWorkoutProgram = {
       image: "hollowbody",
     },
     { type: "rest", name: "Rest", duration: 15 },
-    { type: "exercise", name: "Legs Up Russian Twist", duration: 30 },
+    {
+      type: "exercise",
+      name: "Legs Up Russian Twist",
+      duration: 30,
+      image: "russian-twist",
+    },
     { type: "rest", name: "Rest", duration: 30 },
     {
       type: "exercise",
@@ -36,7 +41,12 @@ export const KILLER_ABS_5MIN: TimedWorkoutProgram = {
       image: "hollowbody",
     },
     { type: "rest", name: "Rest", duration: 15 },
-    { type: "exercise", name: "Legs Up Russian Twist", duration: 30 },
+    {
+      type: "exercise",
+      name: "Legs Up Russian Twist",
+      duration: 30,
+      image: "russian-twist",
+    },
     { type: "rest", name: "Rest", duration: 30 },
     { type: "exercise", name: "Plank", duration: 30, image: "plank" },
     { type: "rest", name: "Rest", duration: 10 },
