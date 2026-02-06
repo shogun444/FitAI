@@ -27,6 +27,7 @@ export const EXERCISE_CATALOG: ExerciseTemplate[] = [
     baseMovement: "press",
     trainingTypes: ["gym"],
     allowsExternalLoad: true,
+    image: "benchpress",
   },
   {
     id: "bodyweight-pushups",
@@ -35,6 +36,7 @@ export const EXERCISE_CATALOG: ExerciseTemplate[] = [
     baseMovement: "pushup",
     trainingTypes: ["calisthenics"],
     allowsExternalLoad: false,
+    image: "pushups",
   },
   {
     id: "weighted-dips",
@@ -43,6 +45,7 @@ export const EXERCISE_CATALOG: ExerciseTemplate[] = [
     baseMovement: "dip",
     trainingTypes: ["weighted"],
     allowsExternalLoad: true,
+    image: "weighted-dips",
   },
   {
     id: "bodyweight-dips",
@@ -51,6 +54,7 @@ export const EXERCISE_CATALOG: ExerciseTemplate[] = [
     baseMovement: "dip",
     trainingTypes: ["calisthenics"],
     allowsExternalLoad: false,
+    image: "dips",
   },
   {
     id: "overhead-press",
@@ -59,6 +63,7 @@ export const EXERCISE_CATALOG: ExerciseTemplate[] = [
     baseMovement: "press",
     trainingTypes: ["gym"],
     allowsExternalLoad: true,
+    image: "overheadpress",
   },
   {
     id: "pike-pushups",
@@ -67,6 +72,7 @@ export const EXERCISE_CATALOG: ExerciseTemplate[] = [
     baseMovement: "pushup",
     trainingTypes: ["calisthenics"],
     allowsExternalLoad: false,
+    image: "pike-pushups",
   },
 
   // ============================================
@@ -79,6 +85,7 @@ export const EXERCISE_CATALOG: ExerciseTemplate[] = [
     baseMovement: "pullup",
     trainingTypes: ["calisthenics"],
     allowsExternalLoad: false,
+    image: "bw-pullups",
   },
   {
     id: "weighted-pullups",
@@ -123,6 +130,7 @@ export const EXERCISE_CATALOG: ExerciseTemplate[] = [
     baseMovement: "hinge",
     trainingTypes: ["gym"],
     allowsExternalLoad: true,
+    image: "deadlift",
   },
   {
     id: "barbell-squats",
@@ -191,6 +199,7 @@ export const EXERCISE_CATALOG: ExerciseTemplate[] = [
     baseMovement: "hold",
     trainingTypes: ["calisthenics"],
     allowsExternalLoad: false,
+    image: "plank",
   },
   {
     id: "l-sit",

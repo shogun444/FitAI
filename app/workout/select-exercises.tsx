@@ -1,5 +1,6 @@
 import { Button, ScreenHeader, Subheading } from "@/components";
 import { SessionConflictModal } from "@/components/ui";
+import { getExerciseImage } from "@/data/exerciseImages";
 import { EXERCISE_CATALOG } from "@/data/exercises";
 import { useSessionGuardWithConfirmation } from "@/hooks/useSessionGuardWithConfirmation";
 import {
@@ -11,6 +12,7 @@ import {
 } from "@/lib/exerciseFilters";
 import { useWorkoutStore } from "@/store";
 import { ExerciseCategory, TrainingType } from "@/types";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
@@ -239,7 +241,24 @@ export default function SelectExercisesScreen() {
                 }`}
               >
                 <View className="flex-row items-center justify-between">
-                  <View className="flex-1">
+                  {/* Exercise Image */}
+                  {getExerciseImage(exercise.image) ? (
+                    <Image
+                      source={getExerciseImage(exercise.image)}
+                      style={{ width: 56, height: 56, borderRadius: 8 }}
+                      contentFit="cover"
+                    />
+                  ) : (
+                    <View
+                      style={{ width: 56, height: 56 }}
+                      className="rounded-lg bg-gray-200 dark:bg-gray-700 items-center justify-center"
+                    >
+                      <Text className="text-gray-400 dark:text-gray-500 text-xl">
+                        🏋️
+                      </Text>
+                    </View>
+                  )}
+                  <View className="flex-1 ml-3">
                     <Text
                       className={`font-primaryMedium text-base ${
                         isSelected

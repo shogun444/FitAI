@@ -15,6 +15,7 @@ export interface ExerciseTemplate {
   baseMovement: string;
   trainingTypes: TrainingType[];
   allowsExternalLoad: boolean;
+  image? : string
 }
 
 export interface WorkoutSet {
