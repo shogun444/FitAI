@@ -17,6 +17,7 @@ export interface TimedStep {
   type: TimedStepType;
   name: string; // Exercise name or "Rest"
   duration: number; // Duration in seconds
+   image ?: string
 }
 
 // ============================================
@@ -30,6 +31,7 @@ export interface TimedWorkoutProgram {
   totalDuration: number; // Total workout time in seconds
   steps: TimedStep[];
   type: "FREE" | "PAID";
+
 }
 
 // ============================================

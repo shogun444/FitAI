@@ -1,6 +1,8 @@
+import { getExerciseImage } from "@/data/exerciseImages";
 import { formatDuration } from "@/data/timed-workouts";
 import { TimedStep, TimedWorkoutProgram } from "@/types/timed-workout";
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -487,6 +489,18 @@ export function TimedWorkoutSession({
           <Text className="font-secondary text-gray-500 text-sm mt-1">
             Step {currentStepIndex + 1} of {program.steps.length}
           </Text>
+          {getExerciseImage(currentStep?.image) && (
+            <Image
+              source={getExerciseImage(currentStep?.image)}
+              style={{
+                width: 120,
+                height: 120,
+                borderRadius: 12,
+                marginTop: 12,
+              }}
+              contentFit="cover"
+            />
+          )}
         </View>
 
         {/* Countdown Display */}

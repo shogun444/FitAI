@@ -20,17 +20,32 @@ export const KILLER_ABS_5MIN: TimedWorkoutProgram = {
   type: "FREE",
   totalDuration: 310, // 5 minutes 10 seconds
   steps: [
-    { type: "exercise", name: "Hollow Body Hold", duration: 30 },
+    {
+      type: "exercise",
+      name: "Hollow Body Hold",
+      duration: 30,
+      image: "hollowbody",
+    },
     { type: "rest", name: "Rest", duration: 15 },
     { type: "exercise", name: "Legs Up Russian Twist", duration: 30 },
     { type: "rest", name: "Rest", duration: 30 },
-    { type: "exercise", name: "Hollow Body Hold", duration: 30 },
+    {
+      type: "exercise",
+      name: "Hollow Body Hold",
+      duration: 30,
+      image: "hollowbody",
+    },
     { type: "rest", name: "Rest", duration: 15 },
     { type: "exercise", name: "Legs Up Russian Twist", duration: 30 },
     { type: "rest", name: "Rest", duration: 30 },
-    { type: "exercise", name: "Plank", duration: 30 },
+    { type: "exercise", name: "Plank", duration: 30, image: "plank" },
     { type: "rest", name: "Rest", duration: 10 },
-    { type: "exercise", name: "Hollow Body Hold", duration: 60 },
+    {
+      type: "exercise",
+      name: "Hollow Body Hold",
+      duration: 60,
+      image: "hollowbody",
+    },
   ],
 };
 
