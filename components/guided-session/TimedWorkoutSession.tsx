@@ -36,8 +36,8 @@ interface CountdownCircleProps {
 
 function CountdownCircle({ remaining, total, isRest }: CountdownCircleProps) {
   const progress = total > 0 ? ((total - remaining) / total) * 100 : 0;
-  const size = 240;
-  const borderWidth = 10;
+  const size = 100;
+  const borderWidth = 6;
   const innerSize = size - borderWidth * 2;
 
   // Different colors for exercise vs rest
@@ -88,13 +88,11 @@ function CountdownCircle({ remaining, total, isRest }: CountdownCircleProps) {
           }}
           className={`${bgClass} items-center justify-center`}
         >
-          <Text className={`font-secondarySemiBold text-7xl ${textClass}`}>
+          <Text className={`font-secondarySemiBold text-3xl ${textClass}`}>
             {remaining}
           </Text>
-          <Text
-            className={`font-secondary ${textClass} text-lg mt-1 opacity-70`}
-          >
-            seconds
+          <Text className={`font-secondary ${textClass} text-xs opacity-70`}>
+            sec
           </Text>
         </View>
       </View>
@@ -490,34 +488,54 @@ export function TimedWorkoutSession({
           steps={program.steps}
         />
 
-        {/* Current Step Name */}
-        <View className="items-center mb-4">
+        {/* Previous Exercise Preview */}
+        {currentStepIndex > 0 &&
+          getExerciseImage(program.steps[currentStepIndex - 1]?.image) && (
+            <View className="items-center mb-2 opacity-50">
+              <Image
+                source={getExerciseImage(
+                  program.steps[currentStepIndex - 1]?.image,
+                )}
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 8,
+                }}
+                contentFit="contain"
+              />
+              <Text className="font-secondary text-gray-400 text-xs mt-1">
+                {program.steps[currentStepIndex - 1]?.name}
+              </Text>
+            </View>
+          )}
+
+        {/* Current Exercise - Dominant Display */}
+        <View className="flex-1 items-center justify-center">
+          {getExerciseImage(currentStep?.image) && (
+            <Image
+              source={getExerciseImage(currentStep?.image)}
+              style={{
+                width: "100%",
+                height: "60%",
+                borderRadius: 16,
+              }}
+              contentFit="contain"
+            />
+          )}
           <Text
-            className={`font-primarySemiBold text-2xl ${
+            className={`font-primarySemiBold text-xl mt-2 ${
               isRest ? "text-amber-600" : "text-gray-900 dark:text-white"
             }`}
           >
             {currentStep?.name}
           </Text>
-          <Text className="font-secondary text-gray-500 text-sm mt-1">
+          <Text className="font-secondary text-gray-500 text-xs mt-1">
             Step {currentStepIndex + 1} of {program.steps.length}
           </Text>
-          {getExerciseImage(currentStep?.image) && (
-            <Image
-              source={getExerciseImage(currentStep?.image)}
-              style={{
-                width: 120,
-                height: 120,
-                borderRadius: 12,
-                marginTop: 12,
-              }}
-              contentFit="contain"
-            />
-          )}
         </View>
 
-        {/* Countdown Display */}
-        <View className="flex-1 items-center justify-center">
+        {/* Timer Display - Compact */}
+        <View className="items-center py-2">
           <CountdownCircle
             remaining={remaining}
             total={currentStep?.duration ?? 0}
@@ -526,8 +544,8 @@ export function TimedWorkoutSession({
 
           {/* Phase indicator */}
           {phase === "paused" && (
-            <View className="mt-6 bg-amber-100 dark:bg-amber-900/30 px-4 py-2 rounded-full">
-              <Text className="font-secondaryMedium text-amber-600">
+            <View className="mt-2 bg-amber-100 dark:bg-amber-900/30 px-3 py-1 rounded-full">
+              <Text className="font-secondaryMedium text-amber-600 text-sm">
                 PAUSED
               </Text>
             </View>
@@ -536,8 +554,22 @@ export function TimedWorkoutSession({
 
         {/* Next Up Preview */}
         {!isLastStep && (
-          <View className="px-4 mb-4">
+          <View className="px-4 mb-3">
             <View className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 flex-row items-center">
+              {getExerciseImage(program.steps[currentStepIndex + 1]?.image) && (
+                <Image
+                  source={getExerciseImage(
+                    program.steps[currentStepIndex + 1]?.image,
+                  )}
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 6,
+                    marginRight: 10,
+                  }}
+                  contentFit="contain"
+                />
+              )}
               <Text className="font-secondary text-gray-500 mr-2">Next:</Text>
               <Text
                 className={`font-secondaryMedium flex-1 ${
