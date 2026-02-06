@@ -383,23 +383,31 @@ export function TimedWorkoutSession({
                 key={index}
                 className="flex-row items-center py-2 border-b border-gray-200 dark:border-gray-700 last:border-b-0"
               >
-                <View
-                  className={`w-6 h-6 rounded-full items-center justify-center mr-3 ${
-                    step.type === "rest"
-                      ? "bg-amber-100 dark:bg-amber-900/30"
-                      : "bg-primary-100 dark:bg-primary-900/30"
-                  }`}
-                >
-                  <Text
-                    className={`font-secondaryMedium text-xs ${
+                {getExerciseImage(step.image) ? (
+                  <Image
+                    source={getExerciseImage(step.image)}
+                    style={{ width: 32, height: 32, borderRadius: 6, marginRight: 10 }}
+                    contentFit="cover"
+                  />
+                ) : (
+                  <View
+                    className={`w-6 h-6 rounded-full items-center justify-center mr-3 ${
                       step.type === "rest"
-                        ? "text-amber-600"
-                        : "text-primary-600"
+                        ? "bg-amber-100 dark:bg-amber-900/30"
+                        : "bg-primary-100 dark:bg-primary-900/30"
                     }`}
                   >
-                    {index + 1}
-                  </Text>
-                </View>
+                    <Text
+                      className={`font-secondaryMedium text-xs ${
+                        step.type === "rest"
+                          ? "text-amber-600"
+                          : "text-primary-600"
+                      }`}
+                    >
+                      {index + 1}
+                    </Text>
+                  </View>
+                )}
                 <Text
                   className={`flex-1 font-secondary ${
                     step.type === "rest"
