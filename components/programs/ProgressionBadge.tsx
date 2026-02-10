@@ -27,7 +27,7 @@ export function ProgressionBadge({
       <View
         className={`bg-gray-100 dark:bg-gray-800 px-2.5 py-1 rounded-full ${className}`}
       >
-        <Text className="font-secondaryMedium text-gray-600 dark:text-gray-400 text-xs">
+        <Text className="font-primaryMedium text-gray-600 dark:text-gray-400 text-[10px] tracking-wide">
           Maintain
         </Text>
       </View>
@@ -38,7 +38,7 @@ export function ProgressionBadge({
     <View
       className={`bg-primary-100 dark:bg-primary-900/30 px-2.5 py-1 rounded-full ${className}`}
     >
-      <Text className="font-secondaryMedium text-primary-700 dark:text-primary-400 text-xs">
+      <Text className="font-primaryMedium text-primary-700 dark:text-primary-400 text-[10px] tracking-wide">
         +{delta} kg
       </Text>
     </View>

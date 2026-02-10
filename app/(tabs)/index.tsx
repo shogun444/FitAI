@@ -81,10 +81,10 @@ export default function HomeScreen() {
 
           {currentWorkout ? (
             <Card>
-              <Text className="font-primarySemiBold text-lg text-gray-900 dark:text-white mb-2">
+              <Text className="font-primarySemiBold text-lg text-gray-900 dark:text-white mb-2 tracking-tight">
                 Workout in Progress
               </Text>
-              <Text className="font-secondary text-gray-500 mb-4">
+              <Text className="font-primary text-gray-400 text-sm mb-4">
                 {currentWorkout.exercises.length} exercises added
               </Text>
               <Button
@@ -104,10 +104,10 @@ export default function HomeScreen() {
         {/* Only show program cards if no active program */}
         {!hasActiveProgram && (
           <View className="my-6">
-            <Text className="font-primarySemiBold text-lg text-gray-900 dark:text-white mb-3">
+            <Text className="font-primarySemiBold text-lg text-gray-900 dark:text-white mb-4 tracking-tight">
               Workout Programs
             </Text>
-            <View className="gap-3">
+            <View className="gap-4">
               {PROGRAMS.map((program) => (
                 <ProgramCard
                   key={program.id}
@@ -121,10 +121,10 @@ export default function HomeScreen() {
 
         {pastWorkouts.length > 0 && (
           <View className="my-10">
-            <Text className="font-primarySemiBold text-lg text-gray-900 dark:text-white mb-1">
+            <Text className="font-primarySemiBold text-lg text-gray-900 dark:text-white mb-1 tracking-tight">
               Recent Workouts
             </Text>
-            <Text className="font-secondary text-gray-500">
+            <Text className="font-primary text-gray-400 text-sm">
               {pastWorkouts.length} workout
               {pastWorkouts.length !== 1 ? "s" : ""} completed
             </Text>

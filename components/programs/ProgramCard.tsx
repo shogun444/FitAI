@@ -14,33 +14,33 @@ interface ProgramCardProps {
 export function ProgramCard({ program, onPress }: ProgramCardProps) {
   return (
     <Pressable onPress={onPress}>
-      <Card className="border border-primary/30">
-        <View className="flex-row items-start justify-between mb-2">
+      <Card className="border border-primary/30 p-5">
+        <View className="flex-row items-start justify-between mb-3">
           <View className="flex-1">
             {program.isPaid && (
-              <View className="bg-primary/20 dark:bg-primary/30 self-start px-2 py-0.5 rounded-full mb-2">
-                <Text className="font-secondaryMedium text-primary-600 text-xs">
+              <View className="bg-primary/20 dark:bg-primary/30 self-start px-2.5 py-1 rounded-full mb-2.5">
+                <Text className="font-primaryMedium text-primary-600 text-[10px] tracking-wide">
                   PAID
                 </Text>
               </View>
             )}
-            <Text className="font-primarySemiBold text-lg text-gray-900 dark:text-white">
+            <Text className="font-primarySemiBold text-xl text-gray-900 dark:text-white tracking-tight leading-7">
               {program.name}
             </Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
         </View>
 
-        <Text className="font-secondaryMedium text-primary-600 text-sm mb-2">
+        <Text className="font-primaryMedium text-primary-600 text-sm mb-3 leading-5">
           {program.tagline}
         </Text>
 
-        <Text className="font-secondary text-gray-500 dark:text-gray-400 text-sm mb-3">
+        <Text className="font-primary text-gray-400 dark:text-gray-500 text-xs mb-4 tracking-wide">
           {program.frequency} · {program.duration}
         </Text>
 
-        <View className="bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-lg self-start">
-          <Text className="font-secondaryMedium text-gray-700 dark:text-gray-300 text-xs capitalize">
+        <View className="bg-gray-100 dark:bg-gray-800/60 px-3 py-1.5 rounded-lg self-start">
+          <Text className="font-primaryMedium text-gray-500 dark:text-gray-400 text-[11px] capitalize tracking-wide">
             {program.level}
           </Text>
         </View>

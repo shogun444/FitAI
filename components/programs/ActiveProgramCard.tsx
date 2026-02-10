@@ -76,24 +76,24 @@ export function ActiveProgramCard({
       {/* Session Conflict Modal */}
       <SessionConflictModal {...modalProps} />
 
-      <Card className="mb-4">
+      <Card className="mb-4 p-5">
         {/* Header */}
-        <View className="flex-row items-center justify-between mb-3">
+        <View className="flex-row items-center justify-between mb-4">
           <View className="flex-row items-center">
             <View className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 items-center justify-center mr-3">
               <Ionicons name="barbell" size={20} color="#65a30d" />
             </View>
             <View>
-              <Text className="font-primarySemiBold text-base text-gray-900 dark:text-white">
+              <Text className="font-primarySemiBold text-lg text-gray-900 dark:text-white tracking-tight leading-6">
                 Weighted Calisthenics 5×5
               </Text>
-              <Text className="font-secondary text-sm text-gray-500 dark:text-gray-400">
+              <Text className="font-primary text-xs text-gray-400 dark:text-gray-500 mt-1 tracking-wide">
                 Week {currentWeek} • Session {program.sessionIndex}
               </Text>
             </View>
           </View>
-          <View className="bg-primary-100 dark:bg-primary-900/30 px-2 py-1 rounded-full">
-            <Text className="font-secondaryMedium text-primary-600 text-xs">
+          <View className="bg-primary-100 dark:bg-primary-900/30 px-2.5 py-1 rounded-full">
+            <Text className="font-primaryMedium text-primary-600 text-[10px] tracking-wide">
               Active
             </Text>
           </View>
@@ -101,22 +101,22 @@ export function ActiveProgramCard({
 
         {/* Last session gains - show only if not first session */}
         {hasData && (
-          <View className="flex-row items-center bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2.5 mb-3">
+          <View className="flex-row items-center bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2.5 mb-4">
             <Ionicons
               name="trending-up"
               size={16}
               color={totalDelta > 0 ? "#65a30d" : "#6b7280"}
               style={{ marginRight: 8 }}
             />
-            <Text className="font-secondary text-sm text-gray-600 dark:text-gray-400 flex-1">
+            <Text className="font-primaryMedium text-xs text-gray-500 dark:text-gray-400 flex-1">
               Last session:
             </Text>
             {totalDelta > 0 ? (
-              <Text className="font-secondaryMedium text-sm text-primary-600">
+              <Text className="font-primaryMedium text-xs text-primary-600">
                 +{totalDelta} kg added
               </Text>
             ) : (
-              <Text className="font-secondaryMedium text-sm text-gray-500 dark:text-gray-400">
+              <Text className="font-primaryMedium text-xs text-gray-400 dark:text-gray-500">
                 Weights maintained
               </Text>
             )}
@@ -124,12 +124,12 @@ export function ActiveProgramCard({
         )}
 
         {/* Progress bar */}
-        <View className="mb-4">
-          <View className="flex-row justify-between mb-1">
-            <Text className="font-secondary text-xs text-gray-500 dark:text-gray-400">
+        <View className="mb-5">
+          <View className="flex-row justify-between mb-1.5">
+            <Text className="font-primarySemiBold text-[11px] text-gray-400 dark:text-gray-500 tracking-wide">
               Program Progress
             </Text>
-            <Text className="font-secondary text-xs text-gray-500 dark:text-gray-400">
+            <Text className="font-primaryMedium text-[11px] text-gray-400 dark:text-gray-500">
               {Math.round(progressPercent)}%
             </Text>
           </View>
@@ -142,8 +142,8 @@ export function ActiveProgramCard({
         </View>
 
         {/* Today's lifts preview with individual gains */}
-        <View className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 mb-4">
-          <Text className="font-secondaryMedium text-sm text-gray-700 dark:text-gray-300 mb-2">
+        <View className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3.5 mb-5">
+          <Text className="font-primarySemiBold text-xs text-gray-500 dark:text-gray-400 mb-3 tracking-wide">
             Today's Workout
           </Text>
           {todaySession.lifts.map((lift) => {
@@ -159,10 +159,10 @@ export function ActiveProgramCard({
             return (
               <View
                 key={lift.liftId}
-                className="flex-row items-center justify-between py-1.5"
+                className="flex-row items-center justify-between py-2"
               >
                 <View className="flex-row items-center flex-1">
-                  <Text className="font-secondary text-sm text-gray-600 dark:text-gray-400">
+                  <Text className="font-primaryMedium text-sm text-gray-600 dark:text-gray-400">
                     {liftInfo.name}
                   </Text>
                   {/* Show per-lift gain badge if there was progression */}
@@ -170,7 +170,7 @@ export function ActiveProgramCard({
                     <ProgressionBadge delta={liftDelta} className="ml-2" />
                   )}
                 </View>
-                <Text className="font-secondaryMedium text-sm text-gray-900 dark:text-white">
+                <Text className="font-primaryMedium text-sm text-gray-900 dark:text-white">
                   {lift.weight} kg × {lift.reps} × {lift.sets}
                 </Text>
               </View>
@@ -182,7 +182,7 @@ export function ActiveProgramCard({
         {isSessionInProgress ? (
           <TouchableOpacity
             onPress={handleContinueSession}
-            className="bg-primary-500 rounded-xl py-3 flex-row items-center justify-center"
+            className="bg-primary-500 rounded-xl py-3.5 flex-row items-center justify-center"
           >
             <Ionicons
               name="play-forward"
@@ -190,14 +190,14 @@ export function ActiveProgramCard({
               color="white"
               style={{ marginRight: 8 }}
             />
-            <Text className="font-secondaryMedium text-white text-base">
+            <Text className="font-secondaryMedium text-white text-base tracking-tight">
               Continue Workout
             </Text>
           </TouchableOpacity>
         ) : (
           <TouchableOpacity
             onPress={handleStartSession}
-            className="bg-primary-500 rounded-xl py-3 flex-row items-center justify-center"
+            className="bg-primary-500 rounded-xl py-3.5 flex-row items-center justify-center"
           >
             <Ionicons
               name="play"
@@ -205,7 +205,7 @@ export function ActiveProgramCard({
               color="white"
               style={{ marginRight: 8 }}
             />
-            <Text className="font-secondaryMedium text-white text-base">
+            <Text className="font-primarySemiBold text-white text-base tracking-tight">
               Start Session
             </Text>
           </TouchableOpacity>

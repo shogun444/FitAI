@@ -41,36 +41,36 @@ export function ActivePullupProgramCard({
   };
 
   return (
-    <Card className="mb-4">
+    <Card className="mb-4 p-5">
       {/* Header */}
-      <View className="flex-row items-center justify-between mb-3">
+      <View className="flex-row items-center justify-between mb-4">
         <View className="flex-row items-center">
           <View className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 items-center justify-center mr-3">
             <Ionicons name="fitness" size={20} color="#65a30d" />
           </View>
           <View>
-            <Text className="font-primarySemiBold text-base text-gray-900 dark:text-white">
+            <Text className="font-primarySemiBold text-lg text-gray-900 dark:text-white tracking-tight leading-6">
               {PULLUP_PROGRAM.name}
             </Text>
-            <Text className="font-secondary text-sm text-gray-500 dark:text-gray-400">
+            <Text className="font-primary text-xs text-gray-400 dark:text-gray-500 mt-1 tracking-wide">
               Session {completedSessions + 1} of {targetSessions}
             </Text>
           </View>
         </View>
-        <View className="bg-primary-100 dark:bg-primary-900/30 px-2 py-1 rounded-full">
-          <Text className="font-secondaryMedium text-primary-600 text-xs">
+        <View className="bg-primary-100 dark:bg-primary-900/30 px-2.5 py-1 rounded-full">
+          <Text className="font-primaryMedium text-primary-600 text-[10px] tracking-wide">
             FREE
           </Text>
         </View>
       </View>
 
       {/* Progress bar */}
-      <View className="mb-4">
-        <View className="flex-row justify-between mb-1">
-          <Text className="font-secondary text-xs text-gray-500 dark:text-gray-400">
+      <View className="mb-5">
+        <View className="flex-row justify-between mb-1.5">
+          <Text className="font-primaryMedium text-[11px] text-gray-400 dark:text-gray-500 tracking-wide">
             Program Progress
           </Text>
-          <Text className="font-secondary text-xs text-gray-500 dark:text-gray-400">
+          <Text className="font-primaryMedium text-[11px] text-gray-400 dark:text-gray-500">
             {completedSessions}/{targetSessions} sessions
           </Text>
         </View>
@@ -83,19 +83,19 @@ export function ActivePullupProgramCard({
       </View>
 
       {/* Exercises preview */}
-      <View className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 mb-4">
-        <Text className="font-secondaryMedium text-sm text-gray-700 dark:text-gray-300 mb-2">
+      <View className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3.5 mb-5">
+        <Text className="font-primarySemiBold text-xs text-gray-500 dark:text-gray-400 mb-3 tracking-wide">
           Exercises Per Session
         </Text>
         {PULLUP_PROGRAM_EXERCISES.map((exercise) => (
           <View
             key={exercise.id}
-            className="flex-row items-center justify-between py-1.5"
+            className="flex-row items-center justify-between py-2"
           >
-            <Text className="font-secondary text-sm text-gray-600 dark:text-gray-400">
+            <Text className="font-primaryMedium text-sm text-gray-600 dark:text-gray-400">
               {exercise.name}
             </Text>
-            <Text className="font-secondaryMedium text-sm text-gray-900 dark:text-white">
+            <Text className="font-primaryMedium text-sm text-gray-900 dark:text-white">
               {exercise.setsPerSession} sets × {exercise.targetValue}{" "}
               {exercise.targetUnit}
             </Text>
@@ -107,7 +107,7 @@ export function ActivePullupProgramCard({
       {hasActiveSession ? (
         <TouchableOpacity
           onPress={handleContinueSession}
-          className="bg-primary-500 rounded-xl py-3 flex-row items-center justify-center"
+          className="bg-primary-500 rounded-xl py-3.5 flex-row items-center justify-center"
         >
           <Ionicons
             name="play-forward"
@@ -115,14 +115,14 @@ export function ActivePullupProgramCard({
             color="white"
             style={{ marginRight: 8 }}
           />
-          <Text className="font-secondaryMedium text-white text-base">
+          <Text className="font-secondaryMedium text-white text-base tracking-tight">
             Continue Session
           </Text>
         </TouchableOpacity>
       ) : (
         <TouchableOpacity
           onPress={handlePress}
-          className="bg-primary-500 rounded-xl py-3 flex-row items-center justify-center"
+          className="bg-primary-500 rounded-xl py-3.5 flex-row items-center justify-center"
         >
           <Ionicons
             name="play"
@@ -130,7 +130,7 @@ export function ActivePullupProgramCard({
             color="white"
             style={{ marginRight: 8 }}
           />
-          <Text className="font-secondaryMedium text-white text-base">
+          <Text className="font-primarySemiBold text-white text-base tracking-tight">
             Start Next Session
           </Text>
         </TouchableOpacity>
